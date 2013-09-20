@@ -299,7 +299,7 @@ class Backend(s3c.Backend):
                 
             resp = self._send_request(method, path, headers, subres, query_string, body)
             log.debug("resp:%s" % resp.getheaders())
-            print("resp:%s" % resp.getheaders())
+#             print("resp:%s" % resp.getheaders())
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
 
             if (resp.status < 300 or resp.status > 399 ):
