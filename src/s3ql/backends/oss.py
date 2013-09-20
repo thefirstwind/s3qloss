@@ -50,8 +50,7 @@ class Backend(s3c.Backend):
         self.namespace = 'http://doc.s3.amazonaws.com/2006-03-01'
         self.version = __version__
         self.agent = "s3qloss%s (%s)" % (__version__, sys.platform)
-        #self.ossapi = oss_api.OssAPI(HOST, self.login, self.password)
-        #self.namespace = ''
+
 
     @staticmethod
     def _parse_storage_url(storage_url, use_ssl):
