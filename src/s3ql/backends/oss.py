@@ -352,10 +352,10 @@ class Backend(s3c.Backend):
             raise HTTPError(resp.status, resp.reason)
 
         content_type = resp.getheader('Content-Type')
+        print("resp:%s" % resp.getheaders())
         if not content_type or not XML_CONTENT_RE.match(content_type):
             raise HTTPError(resp.status, resp.reason, resp.getheaders(), resp.read())
         
-        print("resp:%s" % resp)
 #keiwwwwwwwwwwwww 
         # Error
         tree = ElementTree.parse(resp).getroot()
