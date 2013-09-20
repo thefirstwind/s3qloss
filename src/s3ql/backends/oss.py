@@ -356,20 +356,16 @@ class Backend(s3c.Backend):
             raise HTTPError(resp.status, resp.reason, resp.getheaders(), resp.read())
 
 #TODO 2013/23:13 
-        # Error
-        
         tree = ElementTree.parse(resp).getroot()
         print("#Start------------------------------")
         print("Code :%s" % tree.findtext('Code'))
         print("Message :%s" % tree.findtext('Message'))
-        print("StringToSignBytes :%s" % tree.findtext('StringToSignBytes'))
+        print("HostId :%s" % tree.findtext('HostId'))
+        print("RequestId :%s" % tree.findtext('RequestId'))
+        print("OSSAccessKeyId :%s" % tree.findtext('OSSAccessKeyId'))
         print("SignatureProvided :%s" % tree.findtext('SignatureProvided'))
         print("StringToSign :%s" % tree.findtext('StringToSign'))
-        print("OSSAccessKeyId :%s" % tree.findtext('OSSAccessKeyId'))
-        print("RequestId :%s" % tree.findtext('RequestId'))
-        print("HostId :%s" % tree.findtext('HostId'))
         print("#End------------------------------")
-        
 #         log.debug("RequestId : %s"  % tree.findtext('RequestId'))
 #         log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
 #         log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
@@ -423,14 +419,14 @@ class Backend(s3c.Backend):
         
         params = dict()
         m_get_date = time.time()
-        if query_string:
-            m_get_date_str = str(int(m_get_date))
-            m_get_date_expires_str = str(int(m_get_date_str) + 60)
-            params['Date'] = m_get_date_expires_str
-            params['Expires'] = m_get_date_expires_str
-            params["OSSAccessKeyId"] = self.login
-        else:
-            headers['Date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+#         if query_string:
+#             m_get_date_str = str(int(m_get_date))
+#             m_get_date_expires_str = str(int(m_get_date_str) + 60)
+#             params['Date'] = m_get_date_expires_str
+#             params['Expires'] = m_get_date_expires_str
+#             params["OSSAccessKeyId"] = self.login
+#         else:
+        headers['Date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
 
         '''
         [sign_str] 
@@ -464,11 +460,11 @@ class Backend(s3c.Backend):
         
         
         signature = b64encode(hmac.new(self.password, ''.join(auth_strs), hashlib.sha1).digest())
-        if query_string:
-            params["Signature"] = signature
-#            params["Authorization"] = 'OSS %s:%s' % (self.login, signature)
-        else:
-            headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
+#         if query_string:
+#             params["Signature"] = signature
+# #            params["Authorization"] = 'OSS %s:%s' % (self.login, signature)
+#         else:
+        headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
 #         headers['Host'] = self.hostname
             
 #         log.debug("auth_string: %s " % auth_strs)
