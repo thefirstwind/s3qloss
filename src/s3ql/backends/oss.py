@@ -371,13 +371,13 @@ class Backend(s3c.Backend):
             headers['Signature'] = signature
             
             # mapping objects
-            if query_string is None:
-                query_string = dict()
+#            if query_string is None:
+#                query_string = dict()
 
-            query_string["OSSAccessKeyId"] = self.login
-            query_string["Expires"] = str(send_time)
-            query_string['User-Agent'] = self.agent 
-            query_string['Date'] = send_time
+#            query_string["OSSAccessKeyId"] = self.login
+#            query_string["Expires"] = str(send_time)
+#            query_string['User-Agent'] = self.agent 
+#            query_string['Date'] = send_time
 #kei
 
             resp = self._send_request(method, path, headers, subres, query_string, body)
