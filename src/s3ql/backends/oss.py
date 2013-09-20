@@ -30,7 +30,7 @@ HOST = "oss-internal.aliyuncs.com"
 #pylint: disable=E1002,E1101,W0201
 
 log = logging.getLogger("backends.oss")
-__version__ = '0.0.1'
+# __version__ = '0.0.1'
 
 class Backend(s3c.Backend):
     """A backend to store data in Google Storage
@@ -48,8 +48,8 @@ class Backend(s3c.Backend):
 
         #self.namespace = 'https://github.com/thefirstwind/ossfs/wiki/_pages'
         self.namespace = 'http://doc.s3.amazonaws.com/2006-03-01'
-        self.version = __version__
-        self.agent = "s3qloss%s (%s)" % (__version__, sys.platform)
+#         self.version = __version__
+#         self.agent = "s3qloss%s (%s)" % (__version__, sys.platform)
 
 
     @staticmethod
