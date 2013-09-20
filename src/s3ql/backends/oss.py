@@ -238,6 +238,7 @@ class Backend(s3c.Backend):
  
         return ObjectR(key, resp, self, extractmeta(resp))
 
+    @retry
     def open_write(self, key, metadata=None, is_compressed=False):
         """Open object for writing
 
@@ -648,7 +649,7 @@ class ObjectW(object):
         return self.backend.is_temp_failure(exc)
 
 #kei----------------------
-#     @retry
+    @retry
     def close(self):
 
         '''Close object and upload data'''
