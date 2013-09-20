@@ -47,7 +47,7 @@ class Backend(s3c.Backend):
         super(Backend, self).__init__(storage_url, oss_key, oss_secret, use_ssl)
 
         #self.namespace = 'https://github.com/thefirstwind/ossfs/wiki/_pages'
-        # self.namespace = 'http://doc.s3.amazonaws.com/2006-03-01'
+        self.namespace = 'http://doc.oss.alyuncs.com'
 #         self.version = __version__
 #         self.agent = "s3qloss%s (%s)" % (__version__, sys.platform)
 
@@ -59,7 +59,8 @@ class Backend(s3c.Backend):
             raise QuietError('Invalid storage URL')
 
         bucket_name = hit.group(1)
-        hostname = '%s.oss-internal.aliyuncs.com' % bucket_name
+        #hostname = '%s.oss-internal.aliyuncs.com' % bucket_name
+        hostname = '%s.oss.aliyuncs.com' % bucket_name
 
         prefix = hit.group(2) or ''
         port = 443 if use_ssl else 80
@@ -80,100 +81,102 @@ class Backend(s3c.Backend):
 #             else:
 #                 raise NoSuchObject(key)
 # 
-#     def list(self, prefix=''):
-#         '''List keys in backend
-# 
-#         Returns an iterator over all keys in the backend. This method
-#         handles temporary errors.
-#         '''
-# 
-#         log.debug('list(%s): start', prefix)
-# 
-#         marker = ''
-#         waited = 0
-#         interval = 1 / 50
-#         iterator = self._list(prefix, marker)
-#         while True:
-#             try:
-#                 marker = iterator.next()
-#                 waited = 0
-#             except StopIteration:
-#                 break
-#             except Exception as exc:
-#                 if not self.is_temp_failure(exc):
-#                     raise
-#                 if waited > 60 * 60:
-#                     log.error('list(): Timeout exceeded, re-raising %s exception', 
-#                               type(exc).__name__)
-#                     raise
-# 
-#                 log.info('Encountered %s exception (%s), retrying call to s3c.Backend.list()',
-#                           type(exc).__name__, exc)
-#                 
-#                 if hasattr(exc, 'retry_after') and exc.retry_after:
-#                     interval = exc.retry_after
-#                                     
-#                 time.sleep(interval)
-#                 waited += interval
-#                 interval = min(5*60, 2*interval)
-#                 iterator = self._list(prefix, marker)
-# 
-#             else:
-#                 yield marker
-# 
-#     def _list(self, prefix='', start=''):
-#         '''List keys in backend, starting with *start*
-# 
-#         Returns an iterator over all keys in the backend. This method
-#         does not retry on errors.
-#         '''
-# 
-#         keys_remaining = True
-#         marker = start
-#         prefix = self.prefix + prefix
-# 
-#         while keys_remaining:
-#             log.debug('list(%s): requesting with marker=%s', prefix, marker)
-# 
-#             keys_remaining = None
-#             resp = self._do_request('GET', '/', query_string={ 'prefix': prefix,
-#                                                               'marker': marker,
-#                                                               'max-keys': 1000 })
-# 
-#             if not XML_CONTENT_RE.match(resp.getheader('Content-Type')):
-#                 raise RuntimeError('unexpected content type: %s' % resp.getheader('Content-Type'))
-# 
-#             itree = iter(ElementTree.iterparse(resp, events=("start", "end")))
-#             (event, root) = itree.next()
-# 
-#             namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
-#             if namespace != self.namespace:
-#                 raise RuntimeError('Unsupported namespace: %s' % namespace)
-# 
-#             try:
-#                 for (event, el) in itree:
-#                     if event != 'end':
-#                         continue
-# 
-#                     if el.tag == '{%s}IsTruncated' % self.namespace:
-#                         keys_remaining = (el.text == 'true')
-# 
-#                     elif el.tag == '{%s}Contents' % self.namespace:
-#                         marker = el.findtext('{%s}Key' % self.namespace)
-#                         yield marker[len(self.prefix):]
-#                         root.clear()
-# 
-#             except GeneratorExit:
-#                 # Need to read rest of response
-#                 while True:
-#                     buf = resp.read(BUFSIZE)
-#                     if buf == '':
-#                         break
-#                 break
-# 
-#             if keys_remaining is None:
-#                 raise RuntimeError('Could not parse body')
-# 
+    def list(self, prefix=''):
+        '''List keys in backend
+ 
+        Returns an iterator over all keys in the backend. This method
+        handles temporary errors.
+        '''
+ 
+        log.debug('list(%s): start', prefix)
+ 
+        marker = ''
+        waited = 0
+        interval = 1 / 50
+        iterator = self._list(prefix, marker)
+        while True:
+            try:
+                marker = iterator.next()
+                waited = 0
+            except StopIteration:
+                break
+            except Exception as exc:
+                if not self.is_temp_failure(exc):
+                    raise
+                if waited > 60 * 60:
+                    log.error('list(): Timeout exceeded, re-raising %s exception', 
+                              type(exc).__name__)
+                    raise
+ 
+                log.info('Encountered %s exception (%s), retrying call to s3c.Backend.list()',
+                          type(exc).__name__, exc)
+                 
+                if hasattr(exc, 'retry_after') and exc.retry_after:
+                    interval = exc.retry_after
+                                     
+                time.sleep(interval)
+                waited += interval
+                interval = min(5*60, 2*interval)
+                iterator = self._list(prefix, marker)
+ 
+            else:
+                yield marker
+ 
+    def _list(self, prefix='', start=''):
+        '''List keys in backend, starting with *start*
+ 
+        Returns an iterator over all keys in the backend. This method
+        does not retry on errors.
+        '''
+ 
+        keys_remaining = True
+        marker = start
+        prefix = self.prefix + prefix
+ 
+        while keys_remaining:
+            log.debug('list(%s): requesting with marker=%s', prefix, marker)
+ 
+            keys_remaining = None
+            resp = self._do_request('GET', '/', query_string={ 'prefix': prefix,
+                                                              'marker': marker,
+                                                              'max-keys': 1000 })
+ 
+            if not XML_CONTENT_RE.match(resp.getheader('Content-Type')):
+                raise RuntimeError('unexpected content type: %s' % resp.getheader('Content-Type'))
+ 
+            itree = iter(ElementTree.iterparse(resp, events=("start", "end")))
+            (event, root) = itree.next()
+ 
+            log.debug("root.tag %",root.tag)
+            print("root.tag %", root.tag)
+            namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
+            if namespace != self.namespace:
+                raise RuntimeError('Unsupported namespace: %s' % namespace)
+ 
+            try:
+                for (event, el) in itree:
+                    if event != 'end':
+                        continue
+ 
+                    if el.tag == '{%s}IsTruncated' % self.namespace:
+                        keys_remaining = (el.text == 'true')
+ 
+                    elif el.tag == '{%s}Contents' % self.namespace:
+                        marker = el.findtext('{%s}Key' % self.namespace)
+                        yield marker[len(self.prefix):]
+                        root.clear()
+ 
+            except GeneratorExit:
+                # Need to read rest of response
+                while True:
+                    buf = resp.read(BUFSIZE)
+                    if buf == '':
+                        break
+                break
+ 
+            if keys_remaining is None:
+                raise RuntimeError('Could not parse body')
+ 
 #     @retry
 #     def lookup(self, key):
 #         """Return metadata for given key"""
