@@ -45,45 +45,26 @@ class Backend(s3c.Backend):
     
     def __init__(self, storage_url, oss_key, oss_secret, use_ssl):
         super(Backend, self).__init__(storage_url, oss_key, oss_secret, use_ssl)
-
-        (host, port, bucket_name, prefix) = self._parse_storage_url(storage_url, use_ssl)
-        self.bucket_name = bucket_name
-        self.prefix = prefix
-        self.hostname = host
-        self.port = port
-        self.use_ssl = use_ssl
-        self.conn = self._get_conn()
+        
         self.namespace = 'http://doc.oss.aliyuncs.com'
-        print("storage_url:%s", storage_url)
+
 
     @staticmethod
     def _parse_storage_url(storage_url, use_ssl):
-        '''Extract information from storage URL
-        
-        Return a tuple * (host, port, bucket_name, prefix) * .
-        '''
-
-        hit = re.match(r'^oss://' # Backend
-                       r'([^/:]+)' # Hostname
-                       r'(?::([0-9]+))?' # Port 
-                       r'/([^/]+)' # Bucketname
-                       r'(?:/(.*))?$', # Prefix
-                       storage_url)
+        hit = re.match(r'^oss://([^/]+)(?:/(.*))?$', storage_url)
         if not hit:
             raise QuietError('Invalid storage URL')
 
-        hostname = hit.group(1)
-        if hit.group(2):
-            port = int(hit.group(2))
-        elif use_ssl:
-            port = 443
-        else:
-            port = 80
-        bucketname = hit.group(3)
-        prefix = hit.group(4) or ''
+        bucket_name = hit.group(1)
+        #hostname = '%s.oss-internal.aliyuncs.com' % bucket_name
+        hostname = '%s.oss.aliyuncs.com' % bucket_name
 
-        return (hostname, port, bucketname, prefix)             
+        prefix = hit.group(2) or ''
+        port = 443 if use_ssl else 80
+        return (hostname, port, bucket_name, prefix)        
 
+    def __str__(self):
+        return 'oss://%s/%s' % (self.bucket_name, self.prefix)
     
 #     @retry
 #     def delete(self, key, force=False):
@@ -393,9 +374,6 @@ class Backend(s3c.Backend):
 
             # Ignore missing objects when clearing bucket
             self.delete(s3key, True)
-
-    def __str__(self):
-        return 'oss://%s/%s/%s' % (self.hostname, self.bucket_name, self.prefix)
 
     def _send_request(self, method, path, headers, subres=None, query_string=None, body=None):
         '''Add authentication and send request
