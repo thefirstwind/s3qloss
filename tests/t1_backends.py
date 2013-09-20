@@ -201,8 +201,14 @@ class RackspaceTests(S3Tests):
 class GSTests(S3Tests):
     def setUp(self):
         self.name_cnt = 0
-        self.delay = 15
+        self.delay = 7
         self.backend = gs.Backend(*self.get_credentials('gs-test'), use_ssl=False)
+
+class OSSTests(S3Tests):
+    def setUp(self):
+        self.name_cnt = 0
+        self.delay = 7
+        self.backend = gs.Backend(*self.get_credentials('oss-test'), use_ssl=False)
         
 class S3CTests(S3Tests):
     def setUp(self):
@@ -234,7 +240,16 @@ class URLTests(unittest.TestCase):
                           ('name', 'pref/'))
         self.assertEquals(gs.Backend._parse_storage_url('gs://name//pref/', use_ssl=False)[2:],
                           ('name', '/pref/'))
-                        
+    def test_oss(self):
+        self.assertEquals(oss.Backend._parse_storage_url('oss://name', use_ssl=False)[2:],
+                          ('name', ''))
+        self.assertEquals(oss.Backend._parse_storage_url('oss://name/', use_ssl=False)[2:],
+                          ('name', ''))
+        self.assertEquals(oss.Backend._parse_storage_url('oss://name/pref/', use_ssl=False)[2:],
+                          ('name', 'pref/'))
+        self.assertEquals(oss.Backend._parse_storage_url('oss://name//pref/', use_ssl=False)[2:],
+                          ('name', '/pref/'))
+                            
     def test_s3c(self):
         self.assertEquals(s3c.Backend._parse_storage_url('s3c://host.org/name', use_ssl=False),
                           ('host.org', 80, 'name', ''))
