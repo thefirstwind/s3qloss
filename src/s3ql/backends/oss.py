@@ -462,6 +462,7 @@ class Backend(s3c.Backend):
 
         # False positive, hashlib *does* have sha1 member
         #pylint: disable=E1101
+        print ("auth_string: %s " % auth_strs)
         signature = b64encode(hmac.new(self.password, ''.join(auth_strs), hashlib.sha1).digest())
 
         headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
