@@ -366,8 +366,7 @@ class Backend(s3c.Backend):
         
         if not content_type or not XML_CONTENT_RE.match(content_type):
             raise HTTPError(resp.status, resp.reason, resp.getheaders(), resp.read())
-
-#keiwwwwwwwwwwwww 
+ 
         # Error
         try:
             tree = ElementTree.parse(resp).getroot()
