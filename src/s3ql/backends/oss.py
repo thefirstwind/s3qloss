@@ -24,9 +24,7 @@ import urllib
 from urlparse import urlsplit
 import httplib
 
-
 HOST = "oss-internal.aliyuncs.com"
-#HOST = "oss.aliyuncs.com"
 
 # Pylint goes berserk with false positives
 #pylint: disable=E1002,E1101,W0201
@@ -35,9 +33,9 @@ log = logging.getLogger("backends.oss")
 __version__ = '0.0.1'
 
 class Backend(s3c.Backend):
-    """A backend to store data in Aliyun OSS
+    """A backend to store data in Google Storage
     
-    This class uses standard HTTP connections to connect to OSS.
+    This class uses standard HTTP connections to connect to GS.
     
     The backend guarantees immediate get consistency and eventual list
     consistency.
@@ -52,6 +50,7 @@ class Backend(s3c.Backend):
         self.namespace = 'http://doc.s3.amazonaws.com/2006-03-01'
         self.version = __version__
         self.agent = "s3qloss%s (%s)" % (__version__, sys.platform)
+        #self.ossapi = oss_api.OssAPI(HOST, self.login, self.password)
         #self.namespace = ''
 
     @staticmethod
@@ -385,6 +384,8 @@ class Backend(s3c.Backend):
                 query_string['signature'] = signature
 
 #kei
+            #print("Code: (%s)", tree.findtext('Code'))
+            log.debug('')
             resp = self._send_request(method, path, headers, subres, query_string, body)
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
 
