@@ -569,6 +569,7 @@ class ObjectR(object):
         '''
 
         # chunked encoding handled by httplib
+        buf = ""
         if  self.resp is not None:
             buf = self.resp.read(size)
 
