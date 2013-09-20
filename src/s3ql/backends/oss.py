@@ -68,7 +68,7 @@ class Backend(s3c.Backend):
 
 
 
-    def _headers_with_date(self, headers):
+    def _headers_parse_date(self, headers):
         # Lowercase headers
         keys = list(headers.iterkeys())
         for key in keys:
@@ -94,23 +94,11 @@ class Backend(s3c.Backend):
         Note that *headers* is modified in-place. Returns the response object.
         '''
 
-        # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
-
-#kei
-        headers = self._headers_with_date(headers);
-
-        # Always include bucket name in path for signing
-        sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
-
-        # False positive, hashlib *does* have sha1 member
-        #pylint: disable=E1101
-        signature = self._get_assign(self.password, method, headers, sign_path)
+        signature = headers['Signature']
 
         #headers['authorization'] = 'AWS %s:%s' % (self.login, signature)
         headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
-        headers['Signature'] = signature
-        headers["OSSAccessKeyId"] = self.login
-        headers['User-Agent'] = self.agent 
+        
 
         # Construct full path
         if not self.hostname.startswith(self.bucket_name):
@@ -353,11 +341,13 @@ class Backend(s3c.Backend):
                     headers=None, body=None):
         '''Send request, read and return response object'''
 
+#kei
         log.debug('_do_request(): start with parameters (%r, %r, %r, %r, %r, %r)',
                   method, path, subres, query_string, headers, body)
 
         if headers is None:
             headers = dict()
+        params = dict()
 
         headers['connection'] = 'keep-alive'
 
@@ -366,7 +356,25 @@ class Backend(s3c.Backend):
 
         redirect_count = 0
         while True:
-                
+            
+            headers = self._headers_parse_date(headers);
+                    # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
+
+            # Always include bucket name in path for signing
+            sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
+
+            # False positive, hashlib *does* have sha1 member
+            #pylint: disable=E1101
+            
+            send_time = str(int(time.time()) + 60)
+            params['Date'] = send_time
+            signature = self._get_assign(self.password, method, headers, sign_path)
+            headers['signature'] = signature
+            params["OSSAccessKeyId"] = self.login
+            params["Expires"] = str(send_time)
+            params['User-Agent'] = self.agent 
+            query_string = append_param(query_string, params)
+
             resp = self._send_request(method, path, headers, subres, query_string, body)
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
 
@@ -529,8 +537,6 @@ class Backend(s3c.Backend):
 #            if keys_remaining is None:
 #                raise RuntimeError('Could not parse body')
 
-
-
 def extractmeta(resp):
     '''Extract metadata from HTTP response object'''
 
@@ -548,6 +554,27 @@ def extractmeta(resp):
         meta[hit.group(1)] = val
 
     return meta
+
+def append_param(url, params):
+    '''
+    convert the parameters to query string of URI.
+    '''
+    l = []
+    for k, v in params.items():
+        k = k.replace('_', '-')
+        if  k == 'maxkeys':
+            k = 'max-keys'
+        if isinstance(v, unicode):
+            v = v.encode('utf-8')
+        if v is not None and v != '':
+            l.append('%s=%s' % (urllib.quote(k), urllib.quote(str(v))))
+        elif k == 'acl':
+            l.append('%s' % (urllib.quote(k)))
+        elif v is None or v == '':
+            l.append('%s' % (urllib.quote(k)))
+    if len(l):
+        url = url + '?' + '&'.join(l)
+    return url
 
 class ObjectR(object):
     '''An S3 object open for reading'''
