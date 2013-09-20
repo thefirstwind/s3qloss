@@ -471,6 +471,7 @@ class Backend(s3c.Backend):
         log.debug ("signature: %s " % signature)
         print("auth_string: %s " % auth_strs)
         print("signature: %s " % signature)
+        print("hostname: %s" % self.hostname)
         
         
 #-------------------------------------------------------------------------------
