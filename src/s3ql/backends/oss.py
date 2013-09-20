@@ -698,7 +698,8 @@ class ObjectW(object):
             except:
                 log.exception('Objectw(%s).close(): unable to delete corrupted object!',
                               self.key)
-            raise BadDigestError('BadDigest', 'Received ETag does not agree with our calculations.')
+#kei----------
+#             raise BadDigestError('BadDigest', 'Received ETag does not agree with our calculations.')
 
     def __enter__(self):
         return self
