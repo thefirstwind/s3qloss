@@ -688,7 +688,7 @@ class ObjectW(object):
 #        etag = resp.getheader('ETag').strip('"')
         if resp is not None:
             etag = resp.getheader('ETag').strip('"')
-        assert resp.length == 0
+            assert resp.length == 0
 
         if etag != self.md5.hexdigest():
             log.warn('ObjectW(%s).close(): MD5 mismatch (%s vs %s)', self.key, etag,
