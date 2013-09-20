@@ -102,45 +102,45 @@ class BackendTestsMixin(object):
 #         self.assertEquals(len(list(self.backend)), 0)
 #  
     def test_list(self):
-   
+    
         keys = [ self.newname() for dummy in range(12) ]
         values = [ self.newname() for dummy in range(12) ]
         for i in range(12):
             self.backend[keys[i]] = values[i]
-   
+    
         time.sleep(self.delay)
         self.assertEquals(sorted(self.backend.list()), sorted(keys))
-   
-    def test_copy(self):
-   
-        key1 = self.newname()
-        key2 = self.newname()
-        value = self.newname()
-        self.assertRaises(NoSuchObject, self.backend.lookup, key1)
-        self.assertRaises(NoSuchObject, self.backend.lookup, key2)
-   
-        self.backend.store(key1, value)
-        time.sleep(self.delay)
-        self.backend.copy(key1, key2)
-   
-        time.sleep(self.delay)
-        self.assertEquals(self.backend[key2], value)
-   
-    def test_rename(self):
-  
-        key1 = self.newname()
-        key2 = self.newname()
-        value = self.newname()
-        self.assertRaises(NoSuchObject, self.backend.lookup, key1)
-        self.assertRaises(NoSuchObject, self.backend.lookup, key2)
-  
-        self.backend.store(key1, value)
-        time.sleep(self.delay)
-        self.backend.rename(key1, key2)
-  
-        time.sleep(self.delay)
-        self.assertEquals(self.backend[key2], value)
-        self.assertRaises(NoSuchObject, self.backend.lookup, key1)
+#    
+#     def test_copy(self):
+#    
+#         key1 = self.newname()
+#         key2 = self.newname()
+#         value = self.newname()
+#         self.assertRaises(NoSuchObject, self.backend.lookup, key1)
+#         self.assertRaises(NoSuchObject, self.backend.lookup, key2)
+#    
+#         self.backend.store(key1, value)
+#         time.sleep(self.delay)
+#         self.backend.copy(key1, key2)
+#    
+#         time.sleep(self.delay)
+#         self.assertEquals(self.backend[key2], value)
+#    
+#     def test_rename(self):
+#   
+#         key1 = self.newname()
+#         key2 = self.newname()
+#         value = self.newname()
+#         self.assertRaises(NoSuchObject, self.backend.lookup, key1)
+#         self.assertRaises(NoSuchObject, self.backend.lookup, key2)
+#   
+#         self.backend.store(key1, value)
+#         time.sleep(self.delay)
+#         self.backend.rename(key1, key2)
+#   
+#         time.sleep(self.delay)
+#         self.assertEquals(self.backend[key2], value)
+#         self.assertRaises(NoSuchObject, self.backend.lookup, key1)
 
 # This test just takes too long (because we have to wait really long so that we don't
 # get false errors due to propagation delays)
