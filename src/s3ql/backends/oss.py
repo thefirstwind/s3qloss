@@ -27,6 +27,7 @@ import xml.etree.cElementTree as ElementTree
 import urllib
 from urlparse import urlsplit
 import httplib
+from xml.etree.ElementTree import ParseError
 
 
 # Pylint goes berserk with false positives
@@ -368,13 +369,16 @@ class Backend(s3c.Backend):
 
 #keiwwwwwwwwwwwww 
         # Error
-        tree = ElementTree.parse(resp).getroot()
-        print("RequestId : %s"  % tree.findtext('RequestId'))
-        print("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
-        print("StringToSign : %s"  % tree.findtext('StringToSign'))
-        print("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
-        print("-------end--------")
-        raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
+        try:
+            tree = ElementTree.parse(resp).getroot()
+            print("RequestId : %s"  % tree.findtext('RequestId'))
+            print("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
+            print("StringToSign : %s"  % tree.findtext('StringToSign'))
+            print("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
+            print("-------end--------")
+            raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
+        except ParseError:
+            raise HTTPError("Unknow ERR")
 
 
     def clear(self):
