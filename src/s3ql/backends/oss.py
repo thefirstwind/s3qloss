@@ -15,7 +15,9 @@ from ..common import BUFSIZE,QuietError
 import logging
 #import base64 as b64encode
 import base64 
+from base64 import b64encode
 import re
+from hashlib import sha1 as sha
 import hashlib
 import hmac
 import sys
@@ -383,6 +385,43 @@ class Backend(s3c.Backend):
         '''
 
         # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
+#-------------------------------------------------------------------------------
+#         # Date, can't use strftime because it's locale dependent
+#         now = time.gmtime()
+#         m_put_date_str = ('%s, %02d %s %04d %02d:%02d:%02d GMT'
+#                            % (C_DAY_NAMES[now.tm_wday],
+#                               now.tm_mday,
+#                               C_MONTH_NAMES[now.tm_mon - 1],
+#                               now.tm_year, now.tm_hour,
+#                               now.tm_min, now.tm_sec))
+#         headers['Date'] = m_put_date_str
+#         
+# #         m_get_date = time.time()
+# #         m_get_date_str = str(int(m_get_date))
+# #         m_get_date_expires_str = str(int(m_get_date_str) + 60)
+# #         params = dict()
+# #         params['Date'] = m_get_date_str
+# #         params['Expires'] = m_get_date_expires_str
+# 
+#         '''
+#         [sign_str] 
+#             method + "\n" + 
+#             content_md5.strip() + "\n" + 
+#             content_type + "\n" + 
+#             date + "\n" + 
+#             canonicalized_oss_headers + canonicalized_resource
+#         '''
+#         #kei
+#         # Always include bucket name in path for signing
+#         sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
+#         signature_str = self._get_assign(method.strip().upper(), headers, sign_path)
+#         if subres:
+#             signature_str += subres
+#         signature = base64.encodestring(hmac.new(self.password, signature_str, sha).digest()).strip()
+#         headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
+
+#-------------------------------------------------------------------------------
+        # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
 
         # Lowercase headers
         keys = list(headers.iterkeys())
@@ -395,50 +434,37 @@ class Backend(s3c.Backend):
 
         # Date, can't use strftime because it's locale dependent
         now = time.gmtime()
-        date_str = ('%s, %02d %s %04d %02d:%02d:%02d GMT'
+        headers['date'] = ('%s, %02d %s %04d %02d:%02d:%02d GMT'
                            % (C_DAY_NAMES[now.tm_wday],
                               now.tm_mday,
                               C_MONTH_NAMES[now.tm_mon - 1],
                               now.tm_year, now.tm_hour,
                               now.tm_min, now.tm_sec))
-        headers['Date'] = date_str
-        send_time = str(int(time.time()))
-        print("ddddddddddate: %s  -  %s:",date_str,send_time)
-#         auth_strs = [method, '\n']
-#         for hdr in ('content-md5', 'content-type', 'date'):
-#             if hdr in headers:
-#                 auth_strs.append(headers[hdr])
-#             auth_strs.append('\n')
-       
- #       
-#         date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
-#         headers['Date'] = date
 
-#        auth_strs = [method, '\n']
+        auth_strs = [method, '\n']
 
-#         for hdr in sorted(x for x in headers if x.startswith('x-oss-')):
-#             val = ' '.join(re.split(r'\s*\n\s*', headers[hdr].strip()))
-#             auth_strs.append('%s:%s\n' % (hdr, val))
+        for hdr in ('content-md5', 'content-type', 'date'):
+            if hdr in headers:
+                auth_strs.append(headers[hdr])
+            auth_strs.append('\n')
+
+        for hdr in sorted(x for x in headers if x.startswith('x-oss-')):
+            val = ' '.join(re.split(r'\s*\n\s*', headers[hdr].strip()))
+            auth_strs.append('%s:%s\n' % (hdr, val))
 
 
         # Always include bucket name in path for signing
         sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
-        signature_str = self._get_assign(method.strip().upper(), headers, sign_path)
-
-        h = hmac.new(self.password, signature_str, hashlib.sha1)
-        signature = base64.encodestring(h.digest()).strip()
-#         auth_strs.append(sign_path)
-        
-        
+        auth_strs.append(sign_path)
         if subres:
-            signature.append('?%s' % subres)
+            auth_strs.append('?%s' % subres)
 
         # False positive, hashlib *does* have sha1 member
         #pylint: disable=E1101
-#        signature = b64encode(hmac.new(self.password, ''.join(auth_strs), hashlib.sha1).digest())
+        signature = b64encode(hmac.new(self.password, ''.join(auth_strs), hashlib.sha1).digest())
 
-        headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
-
+        headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
+#-------------------------------------------------------------------------------
         # Construct full path
         if not self.hostname.startswith(self.bucket_name):
             path = '/%s%s' % (self.bucket_name, path)
@@ -449,6 +475,7 @@ class Backend(s3c.Backend):
                 path += '?%s&%s' % (subres, s)
             else:
                 path += '?%s' % s
+            
         elif subres:
             path += '?%s' % subres
 
@@ -510,12 +537,10 @@ class Backend(s3c.Backend):
         '''
         if not headers:
             headers = {}
-        if not result:
-            result = []
         content_md5 = self._safe_get_element('Content-MD5', headers)
         content_type = self._safe_get_element('Content-Type', headers)
-        canonicalized_oss_headers = ""
         date = self._safe_get_element('Date', headers)
+        canonicalized_oss_headers = ""
         canonicalized_resource = sign_path
         tmp_headers = self._format_header(headers)
         if len(tmp_headers) > 0:
@@ -523,21 +548,18 @@ class Backend(s3c.Backend):
             x_header_list.sort()
             for k in x_header_list:
                 if k.startswith("x-oss-"):
-                    canonicalized_oss_headers += k + ":" + tmp_headers[k] + "\n"
-                    
+                    canonicalized_oss_headers += k + ":" + tmp_headers[k] + "\n"     
         string_to_sign = method + "\n" + content_md5.strip() + "\n" + content_type + "\n";
         string_to_sign += date + "\n" + canonicalized_oss_headers + canonicalized_resource
-        result.append(string_to_sign)
-        
-        log.debug("method: %s" % method)
-        log.debug("content_md5: %s" % content_md5)
-        log.debug("content_type: %s" % content_type)
-        log.debug("date: %s" % date)
-        log.debug("canonicalized_oss_headers: %s" % canonicalized_oss_headers)
-        log.debug("canonicalized_resource: %s" % canonicalized_resource)
-        log.debug("string_to_sign: %s" % string_to_sign)
-        log.debug("string_to_sign_size: %s" % len(string_to_sign))
-
+#         log.debug("method: %s" % method)
+#         log.debug("content_md5: %s" % content_md5)
+#         log.debug("content_type: %s" % content_type)
+#         log.debug("date: %s" % date)
+#         log.debug("canonicalized_oss_headers: %s" % canonicalized_oss_headers)
+#         log.debug("canonicalized_resource: %s" % canonicalized_resource)
+#         log.debug("string_to_sign: %s" % string_to_sign)
+#         log.debug("string_to_sign_size: %s" % len(string_to_sign))
+        log.debug("signature_string: %s" % string_to_sign)
         return string_to_sign
     
     def _safe_get_element(self, name, container):
