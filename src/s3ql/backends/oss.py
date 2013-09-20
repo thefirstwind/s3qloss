@@ -303,9 +303,10 @@ class Backend(s3c.Backend):
             resp = self._send_request(method, path, headers, subres, query_string, body)
             log.debug("resp:%s" % resp.getheaders())
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
-            debugtree = ElementTree.parse(resp).getroot()     
+#             debugtree = ElementTree.parse(resp).getroot()     
             print("-------start--------¥n") 
-            print("HostId : %s"  % debugtree.findtext('HostId'))
+            for k in resp.getheaders():
+                print("resp : %s"  % resp[k])
 #             print("RequestId : %s"  % debugtree.findtext('RequestId'))
 #             print("SignatureProvided : %s"  % debugtree.findtext('SignatureProvided'))
 #             print("StringToSign : %s"  % debugtree.findtext('StringToSign'))
