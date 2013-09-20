@@ -393,20 +393,22 @@ class Backend(s3c.Backend):
             del headers[key]
 
         # Date, can't use strftime because it's locale dependent
-        now = time.gmtime()
-        headers['date'] = ('%s, %02d %s %04d %02d:%02d:%02d GMT'
-                           % (C_DAY_NAMES[now.tm_wday],
-                              now.tm_mday,
-                              C_MONTH_NAMES[now.tm_mon - 1],
-                              now.tm_year, now.tm_hour,
-                              now.tm_min, now.tm_sec))
+ #       now = time.gmtime()
+        date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+        headers['date'] = date
+#         headers['date'] = ('%s, %02d %s %04d %02d:%02d:%02d GMT'
+#                            % (C_DAY_NAMES[now.tm_wday],
+#                               now.tm_mday,
+#                               C_MONTH_NAMES[now.tm_mon - 1],
+#                               now.tm_year, now.tm_hour,
+#                               now.tm_min, now.tm_sec))
 
         auth_strs = [method, '\n']
-
         for hdr in ('content-md5', 'content-type', 'date'):
             if hdr in headers:
                 auth_strs.append(headers[hdr])
             auth_strs.append('\n')
+        
 
         for hdr in sorted(x for x in headers if x.startswith('x-oss-')):
             val = ' '.join(re.split(r'\s*\n\s*', headers[hdr].strip()))
