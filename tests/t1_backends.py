@@ -46,61 +46,61 @@ class BackendTestsMixin(object):
 #         self.assertEquals(self.backend[key], value)
 #         self.assertEquals(self.backend.lookup(key), metadata)
 
-#     def test_setitem(self):
-#         key = self.newname()
-#         value = self.newname()
-#         metadata = { 'jimmy': 'jups@42' }
-#    
-#         self.assertRaises(NoSuchObject, self.backend.lookup, key)
-#         self.assertRaises(NoSuchObject, self.backend.__getitem__, key)
-#    
-#         with self.backend.open_write(key, metadata) as fh:
-#             fh.write(self.newname())
-#         time.sleep(self.delay)
-#         self.backend[key] = value
-#         time.sleep(self.delay)
-#    
-#         with self.backend.open_read(key) as fh:
-#             value2 = fh.read()
-#    
-#         self.assertEquals(value, value2)
-#         self.assertEquals(fh.metadata, dict())
-#         self.assertEquals(self.backend.lookup(key), dict())
-#   
-#     def test_contains(self):
-#         key = self.newname()
-#         value = self.newname()
-#   
-#         self.assertFalse(key in self.backend)
-#         self.backend[key] = value
-#         time.sleep(self.delay)
-#         self.assertTrue(key in self.backend)
-#   
-#     def test_delete(self):
-#         key = self.newname()
-#         value = self.newname()
-#         self.backend[key] = value
-#         time.sleep(self.delay)
-#   
-#         self.assertTrue(key in self.backend)
-#         del self.backend[key]
-#         time.sleep(self.delay)
-#         self.assertFalse(key in self.backend)
-#   
-#     def test_clear(self):
-#         key1 = self.newname()
-#         key2 = self.newname()
-#         self.backend[key1] = self.newname()
-#         self.backend[key2] = self.newname()
-#   
-#         time.sleep(self.delay)
-#         self.assertEquals(len(list(self.backend)), 2)
-#         self.backend.clear()
-#         time.sleep(5*self.delay)
-#         self.assertTrue(key1 not in self.backend)
-#         self.assertTrue(key2 not in self.backend)
-#         self.assertEquals(len(list(self.backend)), 0)
-#  
+    def test_setitem(self):
+        key = self.newname()
+        value = self.newname()
+        metadata = { 'jimmy': 'jups@42' }
+    
+        self.assertRaises(NoSuchObject, self.backend.lookup, key)
+        self.assertRaises(NoSuchObject, self.backend.__getitem__, key)
+    
+        with self.backend.open_write(key, metadata) as fh:
+            fh.write(self.newname())
+        time.sleep(self.delay)
+        self.backend[key] = value
+        time.sleep(self.delay)
+    
+        with self.backend.open_read(key) as fh:
+            value2 = fh.read()
+    
+        self.assertEquals(value, value2)
+        self.assertEquals(fh.metadata, dict())
+        self.assertEquals(self.backend.lookup(key), dict())
+   
+    def test_contains(self):
+        key = self.newname()
+        value = self.newname()
+   
+        self.assertFalse(key in self.backend)
+        self.backend[key] = value
+        time.sleep(self.delay)
+        self.assertTrue(key in self.backend)
+   
+    def test_delete(self):
+        key = self.newname()
+        value = self.newname()
+        self.backend[key] = value
+        time.sleep(self.delay)
+   
+        self.assertTrue(key in self.backend)
+        del self.backend[key]
+        time.sleep(self.delay)
+        self.assertFalse(key in self.backend)
+   
+    def test_clear(self):
+        key1 = self.newname()
+        key2 = self.newname()
+        self.backend[key1] = self.newname()
+        self.backend[key2] = self.newname()
+   
+        time.sleep(self.delay)
+        self.assertEquals(len(list(self.backend)), 2)
+        self.backend.clear()
+        time.sleep(5*self.delay)
+        self.assertTrue(key1 not in self.backend)
+        self.assertTrue(key2 not in self.backend)
+        self.assertEquals(len(list(self.backend)), 0)
+  
     def test_list(self):
     
         keys = [ self.newname() for dummy in range(12) ]
@@ -110,37 +110,37 @@ class BackendTestsMixin(object):
     
         time.sleep(self.delay)
         self.assertEquals(sorted(self.backend.list()), sorted(keys))
-#    
-#     def test_copy(self):
-#    
-#         key1 = self.newname()
-#         key2 = self.newname()
-#         value = self.newname()
-#         self.assertRaises(NoSuchObject, self.backend.lookup, key1)
-#         self.assertRaises(NoSuchObject, self.backend.lookup, key2)
-#    
-#         self.backend.store(key1, value)
-#         time.sleep(self.delay)
-#         self.backend.copy(key1, key2)
-#    
-#         time.sleep(self.delay)
-#         self.assertEquals(self.backend[key2], value)
-#    
-#     def test_rename(self):
-#   
-#         key1 = self.newname()
-#         key2 = self.newname()
-#         value = self.newname()
-#         self.assertRaises(NoSuchObject, self.backend.lookup, key1)
-#         self.assertRaises(NoSuchObject, self.backend.lookup, key2)
-#   
-#         self.backend.store(key1, value)
-#         time.sleep(self.delay)
-#         self.backend.rename(key1, key2)
-#   
-#         time.sleep(self.delay)
-#         self.assertEquals(self.backend[key2], value)
-#         self.assertRaises(NoSuchObject, self.backend.lookup, key1)
+    
+    def test_copy(self):
+    
+        key1 = self.newname()
+        key2 = self.newname()
+        value = self.newname()
+        self.assertRaises(NoSuchObject, self.backend.lookup, key1)
+        self.assertRaises(NoSuchObject, self.backend.lookup, key2)
+    
+        self.backend.store(key1, value)
+        time.sleep(self.delay)
+        self.backend.copy(key1, key2)
+    
+        time.sleep(self.delay)
+        self.assertEquals(self.backend[key2], value)
+    
+    def test_rename(self):
+   
+        key1 = self.newname()
+        key2 = self.newname()
+        value = self.newname()
+        self.assertRaises(NoSuchObject, self.backend.lookup, key1)
+        self.assertRaises(NoSuchObject, self.backend.lookup, key2)
+   
+        self.backend.store(key1, value)
+        time.sleep(self.delay)
+        self.backend.rename(key1, key2)
+   
+        time.sleep(self.delay)
+        self.assertEquals(self.backend[key2], value)
+        self.assertRaises(NoSuchObject, self.backend.lookup, key1)
 
 # This test just takes too long (because we have to wait really long so that we don't
 # get false errors due to propagation delays)
