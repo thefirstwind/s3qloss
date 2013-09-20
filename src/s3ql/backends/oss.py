@@ -478,7 +478,6 @@ class Backend(s3c.Backend):
 #         print("hostname: %s" % self.hostname)
 #         print("hostname: %s" % self.hostname)     
         print(">>>>>>>#send----------------")
-        print("Content-MD5: %s" % headers['Content-MD5'])  
         print("Content-Type: %s" % headers['Content-Type']) 
         print("Date: %s" % headers['Date']) 
         print("X-OSS-Meta-Author: %s" % headers['X-OSS-Meta-Author']) 
