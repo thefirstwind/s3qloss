@@ -9,15 +9,13 @@ This program can be distributed under the terms of the GNU GPLv3.
 from __future__ import division, print_function, absolute_import
 from . import s3c
 from .common import NoSuchObject, retry
-from .s3c import HTTPError,NoSuchKeyError , XML_CONTENT_RE, get_S3Error,ObjectW
-from .s3c import C_DAY_NAMES,C_MONTH_NAMES,HTTPResponse,BadDigestError
+from .s3c import HTTPError,NoSuchKeyError, XML_CONTENT_RE,ObjectW
+from .s3c import HTTPResponse,BadDigestError, get_S3Error
 from ..common import BUFSIZE,QuietError
 import logging
 #import base64 as b64encode
-import base64 
 from base64 import b64encode
 import re
-from hashlib import sha1 as sha
 import hashlib
 import hmac
 import sys
@@ -304,12 +302,6 @@ class Backend(s3c.Backend):
             log.debug("resp:%s" % resp.getheaders())
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
 
-            tree = ElementTree.parse(resp).getroot()
-            log.debug("RequestId : %s"  % tree.findtext('RequestId'))
-            log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
-            log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
-            log.debug("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
-
             if (resp.status < 300 or resp.status > 399 ):
                 break
             if (resp.status == 301 or resp.status == 302):
@@ -367,16 +359,16 @@ class Backend(s3c.Backend):
 
 #TODO 2013/23:13 
         # Error
-#         try:
-#             tree = ElementTree.parse(resp).getroot()
-#             log.debug("RequestId : %s"  % tree.findtext('RequestId'))
-#             log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
-#             log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
-#             log.debug("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
-#             log.debug("-------end--------")
-#             raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
-#         except ParseError:
-#             raise HTTPError("ParseError")
+        try:
+            tree = ElementTree.parse(resp).getroot()
+            log.debug("RequestId : %s"  % tree.findtext('RequestId'))
+            log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
+            log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
+            log.debug("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
+            log.debug("-------end--------")
+            raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
+        except ParseError:
+            raise HTTPError("ParseError")
 
 
     def clear(self):
@@ -482,10 +474,8 @@ class Backend(s3c.Backend):
                 path += '?%s&%s' % (subres, s)
             else:
                 path += '?%s' % s
-                
             p = urllib.urlencode(params, doseq=True)
-            path += '%s' % p
-            
+            path += '%s' % p 
         elif subres:
             path += '?%s' % subres
         
@@ -643,7 +633,6 @@ class ObjectW(object):
     def is_temp_failure(self, exc):
         return self.backend.is_temp_failure(exc)
 
-#kei----------------------
     @retry
     def close(self):
         '''Close object and upload data'''
@@ -659,7 +648,18 @@ class ObjectW(object):
         self.fh.seek(0)
         resp = self.backend._do_request('PUT', '/%s%s' % (self.backend.prefix, self.key),
                                        headers=self.headers, body=self.fh)
+        etag = resp.getheader('ETag').strip('"')
         assert resp.length == 0
+
+        if etag != self.md5.hexdigest():
+            log.warn('ObjectW(%s).close(): MD5 mismatch (%s vs %s)', self.key, etag,
+                     self.md5.hexdigest)
+            try:
+                self.backend.delete(self.key)
+            except:
+                log.exception('Objectw(%s).close(): unable to delete corrupted object!',
+                              self.key)
+            raise BadDigestError('BadDigest', 'Received ETag does not agree with our calculations.')
 
     def __enter__(self):
         return self
@@ -683,11 +683,10 @@ def extractmeta(resp):
     # has only been solved cleanly in S3QL 2.0.
     
     meta = dict()
-    if resp is not None:
-        for (name, val) in resp.getheaders():
-            hit = re.match(r'^x-oss-meta-(.+)$', name)
-            if not hit:
-                continue
-            meta[hit.group(1)] = val
+    for (name, val) in resp.getheaders():
+        hit = re.match(r'^x-oss-meta-(.+)$', name)
+        if not hit:
+            continue
+        meta[hit.group(1)] = val
 
     return meta
