@@ -152,11 +152,11 @@ class Backend(s3c.Backend):
             headers = {}
         if not result:
             result = []
-        content_md5 = self._safe_get_element('content-md5', headers)
-        content_type = self._safe_get_element('content-type', headers)
+        content_md5 = self._safe_get_element('Content-MD5', headers)
+        content_type = self._safe_get_element('Content-Type', headers)
         canonicalized_oss_headers = ""
         log.debug("secret_access_key: %s" % secret_access_key)
-        date = self._safe_get_element('date', headers)
+        date = self._safe_get_element('Date', headers)
         canonicalized_resource = resource
         tmp_headers = self._format_header(headers)
         if len(tmp_headers) > 0:
@@ -166,8 +166,7 @@ class Backend(s3c.Backend):
                 if k.startswith("x-oss-"):
                     canonicalized_oss_headers += k + ":" + tmp_headers[k] + "\n"
                     
-        string_to_sign = method + "\n" + content_md5.strip() + "\n" + content_type + "\n";
-        string_to_sign += date + "\n" + canonicalized_oss_headers + canonicalized_resource
+        string_to_sign = method + "\n" + content_md5.strip() + "\n" + content_type + "\n" + date + "\n" + canonicalized_oss_headers + canonicalized_resource
         result.append(string_to_sign)
         
         log.debug("method: %s" % method)
