@@ -386,39 +386,43 @@ class Backend(s3c.Backend):
 
         # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
 #-------------------------------------------------------------------------------
-#         # Date, can't use strftime because it's locale dependent
-#         now = time.gmtime()
-#         m_put_date_str = ('%s, %02d %s %04d %02d:%02d:%02d GMT'
-#                            % (C_DAY_NAMES[now.tm_wday],
-#                               now.tm_mday,
-#                               C_MONTH_NAMES[now.tm_mon - 1],
-#                               now.tm_year, now.tm_hour,
-#                               now.tm_min, now.tm_sec))
-#         headers['Date'] = m_put_date_str
-#         
-# #         m_get_date = time.time()
-# #         m_get_date_str = str(int(m_get_date))
-# #         m_get_date_expires_str = str(int(m_get_date_str) + 60)
-# #         params = dict()
-# #         params['Date'] = m_get_date_str
-# #         params['Expires'] = m_get_date_expires_str
-# 
-#         '''
-#         [sign_str] 
-#             method + "\n" + 
-#             content_md5.strip() + "\n" + 
-#             content_type + "\n" + 
-#             date + "\n" + 
-#             canonicalized_oss_headers + canonicalized_resource
-#         '''
-#         #kei
-#         # Always include bucket name in path for signing
-#         sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
-#         signature_str = self._get_assign(method.strip().upper(), headers, sign_path)
-#         if subres:
-#             signature_str += subres
-#         signature = base64.encodestring(hmac.new(self.password, signature_str, sha).digest()).strip()
-#         headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
+        # Date, can't use strftime because it's locale dependent
+        now = time.gmtime()
+        m_put_date_str = ('%s, %02d %s %04d %02d:%02d:%02d GMT'
+                           % (C_DAY_NAMES[now.tm_wday],
+                              now.tm_mday,
+                              C_MONTH_NAMES[now.tm_mon - 1],
+                              now.tm_year, now.tm_hour,
+                              now.tm_min, now.tm_sec))
+        headers['Date'] = m_put_date_str
+         
+#         m_get_date = time.time()
+#         m_get_date_str = str(int(m_get_date))
+#         m_get_date_expires_str = str(int(m_get_date_str) + 60)
+#         params = dict()
+#         params['Date'] = m_get_date_str
+#         params['Expires'] = m_get_date_expires_str
+ 
+        '''
+        [sign_str] 
+            method + "\n" + 
+            content_md5.strip() + "\n" + 
+            content_type + "\n" + 
+            date + "\n" + 
+            canonicalized_oss_headers + canonicalized_resource
+        '''
+        #kei
+        # Always include bucket name in path for signing
+        sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
+        signature_str = self._get_assign(method.strip().upper(), headers, sign_path)
+        if subres:
+            signature_str += subres
+        print ("---------------------start-----------")
+        print ("auth_string: %s " % signature_str)
+        signature = base64.encodestring(hmac.new(self.password, signature_str, sha).digest()).strip()
+        print ("signature: %s " % signature)
+        print ("---------------------end-----------")
+        headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
 
 #-------------------------------------------------------------------------------
         # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
@@ -462,8 +466,11 @@ class Backend(s3c.Backend):
 
         # False positive, hashlib *does* have sha1 member
         #pylint: disable=E1101
-        print ("auth_string: %s " % auth_strs)
         signature = b64encode(hmac.new(self.password, ''.join(auth_strs), hashlib.sha1).digest())
+        print ("---------------------start-----------")
+        print ("auth_string: %s " % auth_strs)
+        print ("signature: %s " % signature)
+        print ("---------------------start-----------")
 
         headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
 #-------------------------------------------------------------------------------
