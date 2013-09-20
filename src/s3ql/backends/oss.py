@@ -272,8 +272,7 @@ class Backend(s3c.Backend):
 
         try:
             resp = self._do_request('PUT', '/%s%s' % (self.prefix, dest),
-                                    headers={ 'x-oss-copy-source': '/%s/%s%s' % (self.bucket_name,
-                                                                           self.prefix, src)})
+                       headers={ 'x-oss-copy-source': '/%s/%s%s' % (self.bucket_name, self.prefix, src)})
             # Discard response body
             resp.read()
         except NoSuchKeyError:
@@ -300,6 +299,7 @@ class Backend(s3c.Backend):
                 
             resp = self._send_request(method, path, headers, subres, query_string, body)
             log.debug("resp:%s" % resp.getheaders())
+            print("resp:%s" % resp.getheaders())
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
 
             if (resp.status < 300 or resp.status > 399 ):
@@ -361,11 +361,11 @@ class Backend(s3c.Backend):
         # Error
         try:
             tree = ElementTree.parse(resp).getroot()
-            log.debug("RequestId : %s"  % tree.findtext('RequestId'))
-            log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
-            log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
-            log.debug("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
-            log.debug("-------end--------")
+            print("RequestId : %s"  % tree.findtext('RequestId'))
+            print("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
+            print("StringToSign : %s"  % tree.findtext('StringToSign'))
+            print("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
+            print("-------end--------")
             raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
         except ParseError:
             raise HTTPError("ParseError")
@@ -458,9 +458,9 @@ class Backend(s3c.Backend):
         else:
             headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
             
-        log.debug ("auth_string: %s " % auth_strs)
-        log.debug ("signature: %s " % signature)
-        log.debug("hostname: %s" % self.hostname)
+        print("auth_string: %s " % auth_strs)
+        print("signature: %s " % signature)
+        print("hostname: %s" % self.hostname)
         
         
 #-------------------------------------------------------------------------------
@@ -479,8 +479,8 @@ class Backend(s3c.Backend):
         elif subres:
             path += '?%s' % subres
         
-        log.debug("path:%s" % path)
-        log.debug("method:%s" % method)
+        print("path:%s" % path)
+        print("method:%s" % method)
         
         try:
             if body is None or not self.use_expect_100c or isinstance(body, bytes):
