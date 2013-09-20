@@ -359,16 +359,16 @@ class Backend(s3c.Backend):
 
 #TODO 2013/23:13 
         # Error
-        try:
-            tree = ElementTree.parse(resp).getroot()
-            log.debug("RequestId : %s"  % tree.findtext('RequestId'))
-            log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
-            log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
-            log.debug("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
-            log.debug("-------end--------")
-            raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
-        except ParseError:
-            raise HTTPError("ParseError")
+#         try:
+        tree = ElementTree.parse(resp).getroot()
+        log.debug("RequestId : %s"  % tree.findtext('RequestId'))
+        log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
+        log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
+        log.debug("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
+        log.debug("-------end--------")
+        raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
+#         except ParseError:
+#             raise HTTPError("ParseError")
 
 
     def clear(self):
