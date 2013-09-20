@@ -150,7 +150,8 @@ class S3Tests(BackendTestsMixin, unittest.TestCase):
         self.name_cnt = 0
         # This is the time in which we expect S3 changes to propagate. It may
         # be much longer for larger objects, but for tests this is usually enough.
-        self.delay = 15
+        # self.delay = 15
+        self.delay = 6
 
         self.backend = s3.Backend(*self.get_credentials('s3-test'), use_ssl=False)
 
