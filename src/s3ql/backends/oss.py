@@ -638,6 +638,75 @@ class ObjectR(object):
         '''Close object'''
 
         pass
+
+class ObjectW(object):
+    '''An S3 object open for writing
+    
+    All data is first cached in memory, upload only starts when
+    the close() method is called.
+    '''
+
+    def __init__(self, key, backend, headers):
+        self.key = key
+        self.backend = backend
+        self.headers = headers
+        self.closed = False
+        self.obj_size = 0
+        self.fh = tempfile.TemporaryFile(bufsize=0) # no Python buffering
+
+        # False positive, hashlib *does* have md5 member
+        #pylint: disable=E1101        
+        self.md5 = hashlib.md5()
+
+    def write(self, buf):
+        '''Write object data'''
+
+        self.fh.write(buf)
+        self.md5.update(buf)
+        self.obj_size += len(buf)
+
+    def is_temp_failure(self, exc):
+        return self.backend.is_temp_failure(exc)
+
+    @retry
+    def close(self):
+        '''Close object and upload data'''
+
+        # Access to protected member ok
+        #pylint: disable=W0212
+
+        log.debug('ObjectW(%s).close(): start', self.key)
+
+        self.closed = True
+        self.headers['Content-Length'] = self.obj_size
+
+        self.fh.seek(0)
+        resp = self.backend._do_request('PUT', '/%s%s' % (self.backend.prefix, self.key),
+                                       headers=self.headers, body=self.fh)
+        etag = resp.getheader('ETag').strip('"')
+        assert resp.length == 0
+
+        if etag != self.md5.hexdigest():
+            log.warn('ObjectW(%s).close(): MD5 mismatch (%s vs %s)', self.key, etag,
+                     self.md5.hexdigest)
+            try:
+                self.backend.delete(self.key)
+            except:
+                log.exception('Objectw(%s).close(): unable to delete corrupted object!',
+                              self.key)
+            raise BadDigestError('BadDigest', 'Received ETag does not agree with our calculations.')
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        self.close()
+        return False
+
+    def get_obj_size(self):
+        if not self.closed:
+            raise RuntimeError('Object must be closed first.')
+        return self.obj_size
     
 def extractmeta(resp):
     '''Extract metadata from HTTP response object'''
