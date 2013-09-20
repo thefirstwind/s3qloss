@@ -8,7 +8,7 @@ This program can be distributed under the terms of the GNU GPLv3.
 
 from __future__ import division, print_function, absolute_import
 
-from s3ql.backends import local, s3, gs, s3c, swift, rackspace
+from s3ql.backends import local, s3, gs, s3c, swift, rackspace, oss
 from s3ql.backends.common import (ChecksumError, ObjectNotEncrypted, NoSuchObject,
     BetterBackend)
 import ConfigParser
@@ -208,7 +208,7 @@ class OSSTests(S3Tests):
     def setUp(self):
         self.name_cnt = 0
         self.delay = 7
-        self.backend = gs.Backend(*self.get_credentials('oss-test'), use_ssl=False)
+        self.backend = oss.Backend(*self.get_credentials('oss-test'), use_ssl=False)
         
 class S3CTests(S3Tests):
     def setUp(self):
