@@ -386,46 +386,6 @@ class Backend(s3c.Backend):
 
         # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
 #-------------------------------------------------------------------------------
-        # Date, can't use strftime because it's locale dependent
-        now = time.gmtime()
-        m_put_date_str = ('%s, %02d %s %04d %02d:%02d:%02d GMT'
-                           % (C_DAY_NAMES[now.tm_wday],
-                              now.tm_mday,
-                              C_MONTH_NAMES[now.tm_mon - 1],
-                              now.tm_year, now.tm_hour,
-                              now.tm_min, now.tm_sec))
-        headers['Date'] = m_put_date_str
-         
-#         m_get_date = time.time()
-#         m_get_date_str = str(int(m_get_date))
-#         m_get_date_expires_str = str(int(m_get_date_str) + 60)
-#         params = dict()
-#         params['Date'] = m_get_date_str
-#         params['Expires'] = m_get_date_expires_str
- 
-        '''
-        [sign_str] 
-            method + "\n" + 
-            content_md5.strip() + "\n" + 
-            content_type + "\n" + 
-            date + "\n" + 
-            canonicalized_oss_headers + canonicalized_resource
-        '''
-        #kei
-        # Always include bucket name in path for signing
-        sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
-        signature_str = self._get_assign(method.strip().upper(), headers, sign_path)
-        if subres:
-            signature_str += subres
-        print ("---------------------start-----------")
-        print ("auth_string: %s " % signature_str)
-        signature = base64.encodestring(hmac.new(self.password, signature_str, sha).digest()).strip()
-        print ("signature: %s " % signature)
-        print ("---------------------end-----------")
-        headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
-
-#-------------------------------------------------------------------------------
-        # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
 
         # Lowercase headers
         keys = list(headers.iterkeys())
@@ -437,15 +397,21 @@ class Backend(s3c.Backend):
             del headers[key]
 
         # Date, can't use strftime because it's locale dependent
-        now = time.gmtime()
-        headers['date'] = ('%s, %02d %s %04d %02d:%02d:%02d GMT'
-                           % (C_DAY_NAMES[now.tm_wday],
-                              now.tm_mday,
-                              C_MONTH_NAMES[now.tm_mon - 1],
-                              now.tm_year, now.tm_hour,
-                              now.tm_min, now.tm_sec))
-#         headers['date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
-
+        headers['date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+#         m_get_date = time.time()
+#         m_get_date_str = str(int(m_get_date))
+#         m_get_date_expires_str = str(int(m_get_date_str) + 60)
+#         params = dict()
+#         params['Date'] = m_get_date_str
+#         params['Expires'] = m_get_date_expires_str
+        '''
+        [sign_str] 
+            method + "\n" + 
+            content_md5.strip() + "\n" + 
+            content_type + "\n" + 
+            date + "\n" + 
+            canonicalized_oss_headers + canonicalized_resource
+        '''
         auth_strs = [method, '\n']
 
         for hdr in ('content-md5', 'content-type', 'date'):
@@ -467,11 +433,9 @@ class Backend(s3c.Backend):
         # False positive, hashlib *does* have sha1 member
         #pylint: disable=E1101
         signature = b64encode(hmac.new(self.password, ''.join(auth_strs), hashlib.sha1).digest())
-        print ("---------------------start-----------")
-        print ("auth_string: %s " % auth_strs)
-        print ("signature: %s " % signature)
-        print ("---------------------start-----------")
-
+        log.debug ("auth_string: %s " % auth_strs)
+        log.debug ("signature: %s " % signature)
+        
         headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
 #-------------------------------------------------------------------------------
         # Construct full path
@@ -539,62 +503,7 @@ class Backend(s3c.Backend):
 
         return extractmeta(resp)
     
-    def _get_assign(self, method, headers=None, sign_path="/", result=None):
-        '''
-        Create the authorization for OSS based on header input.
-        You should put it into "Authorization" parameter of header.
-        '''
-        if not headers:
-            headers = {}
-        content_md5 = self._safe_get_element('Content-MD5', headers)
-        content_type = self._safe_get_element('Content-Type', headers)
-        date = self._safe_get_element('Date', headers)
-        canonicalized_oss_headers = ""
-        canonicalized_resource = sign_path
-        tmp_headers = self._format_header(headers)
-        if len(tmp_headers) > 0:
-            x_header_list = tmp_headers.keys()
-            x_header_list.sort()
-            for k in x_header_list:
-                if k.startswith("x-oss-"):
-                    canonicalized_oss_headers += k + ":" + tmp_headers[k] + "\n"     
-        string_to_sign = method + "\n" + content_md5.strip() + "\n" + content_type + "\n";
-        string_to_sign += date + "\n" + canonicalized_oss_headers + canonicalized_resource
-#         log.debug("method: %s" % method)
-#         log.debug("content_md5: %s" % content_md5)
-#         log.debug("content_type: %s" % content_type)
-#         log.debug("date: %s" % date)
-#         log.debug("canonicalized_oss_headers: %s" % canonicalized_oss_headers)
-#         log.debug("canonicalized_resource: %s" % canonicalized_resource)
-#         log.debug("string_to_sign: %s" % string_to_sign)
-#         log.debug("string_to_sign_size: %s" % len(string_to_sign))
-        log.debug("signature_string: %s" % string_to_sign)
-        return string_to_sign
-    
-    def _safe_get_element(self, name, container):
-        for k, v in container.items():
-            if k.strip().lower() == name.strip().lower():
-                return v
-        return ""
-    
-    def _format_header(self,headers=None):
-        '''
-        format the headers that self define
-        convert the self define headers to lower.
-        '''
-        if not headers:
-            headers = {}
-        tmp_headers = {}
-        for k in headers.keys():
-            if isinstance(headers[k], unicode):
-                headers[k] = headers[k].encode('utf-8')
-    
-            if k.lower().startswith("x-oss-"):
-                k_lower = k.lower()
-                tmp_headers[k_lower] = headers[k]
-            else:
-                tmp_headers[k] = headers[k]
-        return tmp_headers
+
                 
 class ObjectR(object):
     '''An S3 object open for reading'''
