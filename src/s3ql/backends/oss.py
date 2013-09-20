@@ -152,7 +152,7 @@ class Backend(s3c.Backend):
             log.debug("root.tag %",root.tag)
             
             namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
-#kei--------
+
             if namespace != self.namespace:
                 raise RuntimeError('Unsupported namespace: %s' % namespace)
  
@@ -180,26 +180,25 @@ class Backend(s3c.Backend):
                         break
                 break
 
-#kei--------------- 
             if keys_remaining is None:
                 raise RuntimeError('Could not parse body')
 
-#     @retry
-#     def lookup(self, key):
-#         """Return metadata for given key"""
-# 
-#         log.debug('lookup(%s)', key)
-# 
-#         try:
-#             resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
-#             assert resp.length == 0
-#         except HTTPError as exc:
-#             if exc.status == 404:
-#                 raise NoSuchObject(key)
-#             else:
-#                 raise
-# 
-#         return extractmeta(resp)
+    @retry
+    def lookup(self, key):
+        """Return metadata for given key"""
+
+        log.debug('lookup(%s)', key)
+
+        try:
+            resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
+            assert resp.length == 0
+        except HTTPError as exc:
+            if exc.status == 404:
+                raise NoSuchObject(key)
+            else:
+                raise
+
+        return extractmeta(resp)
 
     @retry
     def get_size(self, key):
@@ -569,10 +568,7 @@ class ObjectR(object):
         '''
 
         # chunked encoding handled by httplib
-        if  self.resp is not None:
-            buf = self.resp.read(size)
-        else:
-            return
+        buf = self.resp.read(size)
 
         # Check MD5 on EOF
         if not buf and not self.md5_checked:
@@ -648,38 +644,22 @@ class ObjectW(object):
         return self.backend.is_temp_failure(exc)
 
 #kei----------------------
-
+    @retry
     def close(self):
-        pass
         '''Close object and upload data'''
- 
+
         # Access to protected member ok
         #pylint: disable=W0212
- 
+
         log.debug('ObjectW(%s).close(): start', self.key)
- 
+
         self.closed = True
         self.headers['Content-Length'] = self.obj_size
- 
+
         self.fh.seek(0)
         resp = self.backend._do_request('PUT', '/%s%s' % (self.backend.prefix, self.key),
                                        headers=self.headers, body=self.fh)
-###kei------
-        etag = resp.getheader('ETag').strip('"')
-        if resp is not None:
-            etag = resp.getheader('ETag').strip('"')
-            assert resp.length == 0
- 
-        if etag != self.md5.hexdigest():
-            log.warn('ObjectW(%s).close(): MD5 mismatch (%s vs %s)', self.key, etag,
-                  self.md5.hexdigest)
-            try:
-                self.backend.delete(self.key)
-            except:
-                log.exception('Objectw(%s).close(): unable to delete corrupted object!',
-                               self.key)
-#kei----------
-            raise BadDigestError('BadDigest', 'Received ETag does not agree with our calculations.')
+        assert resp.length == 0
 
     def __enter__(self):
         return self
