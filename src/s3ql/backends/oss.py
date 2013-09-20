@@ -304,8 +304,6 @@ class Backend(s3c.Backend):
 
             if (resp.status < 300 or resp.status > 399 ):
                 break
-            if (resp.status == 301 or resp.status == 302):
-                break
 
             # Assume redirect
             new_url = resp.getheader('Location')
@@ -359,7 +357,6 @@ class Backend(s3c.Backend):
 
 #TODO 2013/23:13 
         # Error
-#         try:
         tree = ElementTree.parse(resp).getroot()
         log.debug("RequestId : %s"  % tree.findtext('RequestId'))
         log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
@@ -367,8 +364,6 @@ class Backend(s3c.Backend):
         log.debug("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
         log.debug("-------end--------")
         raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
-#         except ParseError:
-#             raise HTTPError("ParseError")
 
 
     def clear(self):
