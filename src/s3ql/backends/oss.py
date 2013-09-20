@@ -425,9 +425,9 @@ class Backend(s3c.Backend):
             params['Date'] = m_get_date_expires_str
             params['Expires'] = m_get_date_expires_str
             params["OSSAccessKeyId"] = self.login
-            headers['Date'] = m_get_date_expires_str
+            headers['date'] = m_get_date_expires_str
         else:
-            headers['Date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+            headers['date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
 
         '''
         [sign_str] 
