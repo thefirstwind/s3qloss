@@ -25,26 +25,26 @@ class BackendTestsMixin(object):
         # Include special characters
         return "s3ql_=/_%d" % self.name_cnt
 
-#     def test_write(self):
-#         key = self.newname()
-#         value = self.newname()
-#         metadata = { 'jimmy': 'jups@42' }
-#  
-#         self.assertRaises(NoSuchObject, self.backend.lookup, key)
-#         self.assertRaises(NoSuchObject, self.backend.fetch, key)
-#  
-#         with self.backend.open_write(key, metadata) as fh:
-#             fh.write(value)
-#  
-#         time.sleep(self.delay)
-#  
-#         with self.backend.open_read(key) as fh:
-#             value2 = fh.read()
-#  
-#         self.assertEquals(value, value2)
-#         self.assertEquals(metadata, fh.metadata)
-#         self.assertEquals(self.backend[key], value)
-#         self.assertEquals(self.backend.lookup(key), metadata)
+    def test_write(self):
+        key = self.newname()
+        value = self.newname()
+        metadata = { 'jimmy': 'jups@42' }
+  
+        self.assertRaises(NoSuchObject, self.backend.lookup, key)
+        self.assertRaises(NoSuchObject, self.backend.fetch, key)
+  
+        with self.backend.open_write(key, metadata) as fh:
+            fh.write(value)
+  
+        time.sleep(self.delay)
+  
+        with self.backend.open_read(key) as fh:
+            value2 = fh.read()
+  
+        self.assertEquals(value, value2)
+        self.assertEquals(metadata, fh.metadata)
+        self.assertEquals(self.backend[key], value)
+        self.assertEquals(self.backend.lookup(key), metadata)
 
     def test_setitem(self):
         key = self.newname()
