@@ -482,25 +482,6 @@ class Backend(s3c.Backend):
 
             keys_remaining = None
 
-#kei
-            date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
-            headers['date'] = date;
-            # Always include bucket name in path for signing
-            sign_path = urllib.quote('/%s%s' % (self.bucket_name, "/"))
-
-            # False positive, hashlib *does* have sha1 member
-            #pylint: disable=E1101
-            signature = self._get_assign(self.password, "GET", headers, sign_path)
-
-            #headers['authorization'] = 'AWS %s:%s' % (self.login, signature)
-            authorization = 'OSS %s:%s' % (self.login, signature)
-
-#            resp = self._do_request('GET', '/%s%s' % (self.prefix, key))
-            headers['authorization'] = authorization;
-            headers['host'] = self.hostname;
-            headers['prefix'] = self.prefix;
-            headers['marker'] = marker;
-            headers['delimiter'] = '';
             resp = self._do_request('GET', '/', query_string={ 'prefix': prefix,
                                                    'marker': marker,
                                                    'delimiter': '',

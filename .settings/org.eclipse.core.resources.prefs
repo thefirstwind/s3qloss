@@ -1,4 +1,5 @@
 eclipse.preferences.version=1
 encoding//src/s3ql/oss/oss_api.py=utf-8
 encoding//src/s3ql/oss/oss_util.py=utf-8
+encoding//src/s3ql/oss/oss_xml_handler.py=utf-8
 encoding/<project>=UTF-8
