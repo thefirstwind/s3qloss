@@ -162,7 +162,7 @@ class Backend(s3c.Backend):
                         continue
                     
                     if el.tag == 'ListBucketResult':
-                        print("root.tag %", el.findtext('ListBucketResult'))
+                        log.debug("root.tag %", el.findtext('ListBucketResult'))
 
                     if el.tag == '{%s}IsTruncated' % self.namespace:
                         keys_remaining = (el.text == 'true')
@@ -238,7 +238,6 @@ class Backend(s3c.Backend):
  
         return ObjectR(key, resp, self, extractmeta(resp))
 
-    @retry
     def open_write(self, key, metadata=None, is_compressed=False):
         """Open object for writing
 
@@ -306,13 +305,12 @@ class Backend(s3c.Backend):
             log.debug("resp:%s" % resp.getheaders())
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
 
-            print("-------start--------")
             tree = ElementTree.parse(resp).getroot()
-            print("RequestId : %s"  % tree.findtext('RequestId'))
-            print("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
-            print("StringToSign : %s"  % tree.findtext('StringToSign'))
-            print("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
-            print("-------end--------")
+            log.debug("RequestId : %s"  % tree.findtext('RequestId'))
+            log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
+            log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
+            log.debug("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
+
             if (resp.status < 300 or resp.status > 399 ):
                 break
             if (resp.status == 301 or resp.status == 302):
@@ -367,15 +365,16 @@ class Backend(s3c.Backend):
         
         if not content_type or not XML_CONTENT_RE.match(content_type):
             raise HTTPError(resp.status, resp.reason, resp.getheaders(), resp.read())
- 
+
+#TODO 2013/23:13 
         # Error
         try:
             tree = ElementTree.parse(resp).getroot()
-            print("RequestId : %s"  % tree.findtext('RequestId'))
-            print("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
-            print("StringToSign : %s"  % tree.findtext('StringToSign'))
-            print("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
-            print("-------end--------")
+            log.debug("RequestId : %s"  % tree.findtext('RequestId'))
+            log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
+            log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
+            log.debug("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
+            log.debug("-------end--------")
             raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
         except ParseError:
             raise HTTPError("ParseError")
@@ -470,9 +469,7 @@ class Backend(s3c.Backend):
             
         log.debug ("auth_string: %s " % auth_strs)
         log.debug ("signature: %s " % signature)
-        print("auth_string: %s " % auth_strs)
-        print("signature: %s " % signature)
-        print("hostname: %s" % self.hostname)
+        log.debug("hostname: %s" % self.hostname)
         
         
 #-------------------------------------------------------------------------------
@@ -493,10 +490,9 @@ class Backend(s3c.Backend):
         elif subres:
             path += '?%s' % subres
         
-        print("------------")
-        print("path:%s" % path)
-        print("method:%s" % method)
-        print("------------")
+        log.debug("path:%s" % path)
+        log.debug("method:%s" % method)
+        
         try:
             if body is None or not self.use_expect_100c or isinstance(body, bytes):
                 # Easy case, small or no payload
@@ -649,9 +645,9 @@ class ObjectW(object):
         return self.backend.is_temp_failure(exc)
 
 #kei----------------------
-    @retry
-    def close(self):
 
+    def close(self):
+        pass
         '''Close object and upload data'''
  
         # Access to protected member ok
@@ -663,7 +659,7 @@ class ObjectW(object):
         self.headers['Content-Length'] = self.obj_size
  
         self.fh.seek(0)
-        resp = self._do_request('PUT', '/%s%s' % (self.backend.prefix, self.key),
+        resp = self.backend._do_request('PUT', '/%s%s' % (self.backend.prefix, self.key),
                                        headers=self.headers, body=self.fh)
 ###kei------
         etag = resp.getheader('ETag').strip('"')
