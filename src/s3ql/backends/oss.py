@@ -482,7 +482,7 @@ class Backend(s3c.Backend):
             else:
                 path += '?%s' % s
                 
-            p = urllib.urlencode(params.strip(), doseq=True)
+            p = urllib.urlencode(params, doseq=True)
             path += '%s' % p
             
         elif subres:
@@ -643,6 +643,7 @@ class ObjectW(object):
     def is_temp_failure(self, exc):
         return self.backend.is_temp_failure(exc)
 
+#kei----------------------
 #     @retry
     def close(self):
         pass
