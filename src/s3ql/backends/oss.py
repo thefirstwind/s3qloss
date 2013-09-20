@@ -148,7 +148,7 @@ class Backend(s3c.Backend):
             (event, root) = itree.next()
  
             log.debug("root.tag %",root.tag)
-            print("root.tag %", root['ListBucketResult'])
+            
             namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
             if namespace != self.namespace:
                 raise RuntimeError('Unsupported namespace: %s' % namespace)
@@ -157,7 +157,10 @@ class Backend(s3c.Backend):
                 for (event, el) in itree:
                     if event != 'end':
                         continue
- 
+                    
+                    if el.tag == 'ListBucketResult':
+                        print("root.tag %", el.findtext('ListBucketResult'))
+
                     if el.tag == '{%s}IsTruncated' % self.namespace:
                         keys_remaining = (el.text == 'true')
  
