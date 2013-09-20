@@ -458,6 +458,7 @@ class Backend(s3c.Backend):
 #             params["Signature"] = signature
             params["Authorization"] = 'OSS %s:%s' % (self.login, signature)
         headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
+        headers['Host'] = self.hostname
             
 #         log.debug("auth_string: %s " % auth_strs)
 #         log.debug("signature: %s " % signature)
