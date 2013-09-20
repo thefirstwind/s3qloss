@@ -150,8 +150,8 @@ class Backend(s3c.Backend):
             log.debug("root.tag %",root.tag)
             
             namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
-            if namespace != self.namespace:
-                raise RuntimeError('Unsupported namespace: %s' % namespace)
+#            if namespace != self.namespace:
+#                raise RuntimeError('Unsupported namespace: %s' % namespace)
  
             try:
                 for (event, el) in itree:
