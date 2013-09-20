@@ -306,11 +306,11 @@ class Backend(s3c.Backend):
             debugtree = ElementTree.parse(resp).getroot()     
             print("-------start--------¥n") 
             print("HostId : %s"  % debugtree.findtext('HostId'))
-            print("RequestId : %s"  % debugtree.findtext('RequestId'))
-            print("SignatureProvided : %s"  % debugtree.findtext('SignatureProvided'))
-            print("StringToSign : %s"  % debugtree.findtext('StringToSign'))
-            print("OSSAccessKeyId : %s"  % debugtree.findtext('OSSAccessKeyId'))
-            print("-------end--------¥n") 
+#             print("RequestId : %s"  % debugtree.findtext('RequestId'))
+#             print("SignatureProvided : %s"  % debugtree.findtext('SignatureProvided'))
+#             print("StringToSign : %s"  % debugtree.findtext('StringToSign'))
+#             print("OSSAccessKeyId : %s"  % debugtree.findtext('OSSAccessKeyId'))
+#             print("-------end--------¥n") 
 
             if (resp.status < 300 or resp.status > 399 ):
                 break
