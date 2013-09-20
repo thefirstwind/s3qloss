@@ -301,6 +301,7 @@ class Backend(s3c.Backend):
         while True:
                 
             resp = self._send_request(method, path, headers, subres, query_string, body)
+            print("resp:%s" % resp.getheaders())
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
 
             if (resp.status < 300 or resp.status > 399):
@@ -352,7 +353,7 @@ class Backend(s3c.Backend):
             raise HTTPError(resp.status, resp.reason)
 
         content_type = resp.getheader('Content-Type')
-        print("resp:%s" % resp.getheaders())
+        
         if not content_type or not XML_CONTENT_RE.match(content_type):
             raise HTTPError(resp.status, resp.reason, resp.getheaders(), resp.read())
         
