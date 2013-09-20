@@ -650,7 +650,7 @@ class ObjectW(object):
 #kei----------------------
 #     @retry
     def close(self):
-        pass
+
         '''Close object and upload data'''
  
         # Access to protected member ok
