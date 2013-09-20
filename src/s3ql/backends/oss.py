@@ -460,7 +460,11 @@ class Backend(s3c.Backend):
         # False positive, hashlib *does* have sha1 member
         #pylint: disable=E1101
         
-        
+        print("<<<<<<<<<<<<<<<<")
+        print("auth_strs :%s" % auth_strs)
+        print(">>>>>>>>>>>>>>>>")
+        print("password :%s"  % self.password)
+        print(">>>>>>>>>>>>>>>>")
         signature = b64encode(hmac.new(self.password, ''.join(auth_strs), hashlib.sha1).digest())
         if query_string:
             params["Signature"] = signature
@@ -478,10 +482,10 @@ class Backend(s3c.Backend):
 #         print("hostname: %s" % self.hostname)
 #         print("hostname: %s" % self.hostname)     
         print(">>>>>>>#send----------------")
-        print("Date: %s" % headers['Date']) 
-        print("accessID: %s" % self.login) 
-        print("accessKey: %s" % self.password) 
-        print("sign_path: %s" % sign_path) 
+        print("Date :%s" % headers['Date']) 
+        print("accessID :%s" % self.login) 
+        print("accessKey :%s" % self.password) 
+        print("sign_path :%s" % sign_path) 
         print("<<<<<<<#send----------------")
    
         
