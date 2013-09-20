@@ -43,8 +43,9 @@ class Backend(s3c.Backend):
     def __init__(self, storage_url, oss_key, oss_secret, use_ssl):
         super(Backend, self).__init__(storage_url, oss_key, oss_secret, use_ssl)
 
-        self.namespace = 'https://github.com/thefirstwind/ossfs/wiki/_pages'
-        self.namespace = ''
+        #self.namespace = 'https://github.com/thefirstwind/ossfs/wiki/_pages'
+        self.namespace = 'http://doc.s3.amazonaws.com/2006-03-01'
+        #self.namespace = ''
 
     @staticmethod
     def _parse_storage_url(storage_url, use_ssl):
