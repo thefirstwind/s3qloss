@@ -347,7 +347,7 @@ class Backend(s3c.Backend):
 
         if headers is None:
             headers = dict()
-        params = dict()
+#        params = dict()
 
         headers['connection'] = 'keep-alive'
 
@@ -372,10 +372,11 @@ class Backend(s3c.Backend):
             headers['signature'] = signature
             
             # mapping objects
-            query_string["OSSAccessKeyId"] = self.login
-            query_string["Expires"] = str(send_time)
-            query_string['User-Agent'] = self.agent 
-            query_string['Date'] = send_time
+            print("query_string:%s", type(query_string))
+#            query_string["OSSAccessKeyId"] = self.login
+#            query_string["Expires"] = str(send_time)
+#            query_string['User-Agent'] = self.agent 
+#            query_string['Date'] = send_time
 #kei
 
             resp = self._send_request(method, path, headers, subres, query_string, body)
