@@ -304,7 +304,13 @@ class Backend(s3c.Backend):
             log.debug("resp:%s" % resp.getheaders())
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
 
-
+            print("-------start--------")
+            tree = ElementTree.parse(resp).getroot()
+            print("RequestId : %s"  % tree.findtext('RequestId'))
+            print("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
+            print("StringToSign : %s"  % tree.findtext('StringToSign'))
+            print("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
+            print("-------end--------")
             if (resp.status < 300 or resp.status > 399 ):
                 break
             if (resp.status == 301 or resp.status == 302):
