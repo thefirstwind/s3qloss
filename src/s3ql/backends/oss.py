@@ -303,6 +303,14 @@ class Backend(s3c.Backend):
             resp = self._send_request(method, path, headers, subres, query_string, body)
             log.debug("resp:%s" % resp.getheaders())
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
+            debugtree = ElementTree.parse(resp).getroot()     
+            print("-------start--------¥n") 
+            print("HostId : %s"  % debugtree.findtext('HostId'))
+            print("RequestId : %s"  % debugtree.findtext('RequestId'))
+            print("SignatureProvided : %s"  % debugtree.findtext('SignatureProvided'))
+            print("StringToSign : %s"  % debugtree.findtext('StringToSign'))
+            print("OSSAccessKeyId : %s"  % debugtree.findtext('OSSAccessKeyId'))
+            print("-------end--------¥n") 
 
             if (resp.status < 300 or resp.status > 399 ):
                 break
@@ -358,7 +366,7 @@ class Backend(s3c.Backend):
         
         if not content_type or not XML_CONTENT_RE.match(content_type):
             raise HTTPError(resp.status, resp.reason, resp.getheaders(), resp.read())
-        
+
 #keiwwwwwwwwwwwww 
         # Error
         tree = ElementTree.parse(resp).getroot()
