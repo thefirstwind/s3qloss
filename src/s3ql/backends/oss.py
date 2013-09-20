@@ -10,7 +10,7 @@ from __future__ import division, print_function, absolute_import
 from . import s3c
 from .common import NoSuchObject, retry
 from .s3c import HTTPError,NoSuchKeyError , XML_CONTENT_RE, get_S3Error,BadDigestError
-from ossfs.common import BUFSIZE,QuietError
+from ..common import BUFSIZE,QuietError
 import logging
 import base64
 import re
@@ -24,6 +24,10 @@ import urllib
 from urlparse import urlsplit
 import httplib
 
+
+#HOST = "oss-internal.aliyuncs.com"
+HOST = "oss.aliyuncs.com"
+
 # Pylint goes berserk with false positives
 #pylint: disable=E1002,E1101,W0201
 
@@ -31,9 +35,9 @@ log = logging.getLogger("backends.oss")
 __version__ = '0.0.1'
 
 class Backend(s3c.Backend):
-    """A backend to store data in Google Storage
+    """A backend to store data in Aliyun OSS
     
-    This class uses standard HTTP connections to connect to GS.
+    This class uses standard HTTP connections to connect to OSS.
     
     The backend guarantees immediate get consistency and eventual list
     consistency.
@@ -57,7 +61,7 @@ class Backend(s3c.Backend):
             raise QuietError('Invalid storage URL')
 
         bucket_name = hit.group(1)
-        hostname = '%s.oss-internal.aliyuncs.com' % bucket_name
+        hostname = '%s.%s' % (HOST,bucket_name)
 
         prefix = hit.group(2) or ''
         port = 443 if use_ssl else 80
@@ -381,7 +385,8 @@ class Backend(s3c.Backend):
                 query_string['signature'] = signature
 
 #kei
-
+            #print("Code: (%s)", tree.findtext('Code'))
+            log.debug('')
             resp = self._send_request(method, path, headers, subres, query_string, body)
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
 
