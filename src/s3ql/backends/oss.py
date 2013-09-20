@@ -482,7 +482,7 @@ class Backend(s3c.Backend):
 #            path += '&%s' % p 
         
         log.debug("path:%s" % path)
-        log.debug("method:%s" % method)
+        print("method:%s" % method)
         
         try:
             if body is None or not self.use_expect_100c or isinstance(body, bytes):
@@ -585,10 +585,10 @@ class ObjectR(object):
                                     
                 self.resp.close() 
             
-            if etag != self.md5.hexdigest():
-                log.warn('ObjectR(%s).close(): MD5 mismatch: %s vs %s', self.key, etag,
-                         self.md5.hexdigest())
-                raise BadDigestError('BadDigest', 'ETag header does not agree with calculated MD5')
+#             if etag != self.md5.hexdigest():
+#                 log.warn('ObjectR(%s).close(): MD5 mismatch: %s vs %s', self.key, etag,
+#                          self.md5.hexdigest())
+#                 raise BadDigestError('BadDigest', 'ETag header does not agree with calculated MD5')
             
             return buf
 
@@ -654,16 +654,14 @@ class ObjectW(object):
         assert resp.length == 0
 
 #        if etag != self.md5.hexdigest():
-        print("etag:%s" % etag)
         if etag:
-            log.warn('ObjectW(%s).close(): MD5 mismatch (%s vs %s)', self.key, etag,
-                     self.md5.hexdigest)
+            log.warn('ObjectW(%s).close(): MD5 etag (%s)', self.key, etag)
+#            log.warn('ObjectW(%s).close(): MD5 mismatch (%s vs %s)', self.key, etag, self.md5.hexdigest)
             try:
                 self.backend.delete(self.key)
             except:
-                log.exception('Objectw(%s).close(): unable to delete corrupted object!',
-                              self.key)
-            raise BadDigestError('BadDigest', 'Received ETag does not agree with our calculations.')
+                log.exception('Objectw(%s).close(): unable to delete corrupted object!', self.key)
+#            raise BadDigestError('BadDigest', 'Received ETag does not agree with our calculations.')
 
     def __enter__(self):
         return self
