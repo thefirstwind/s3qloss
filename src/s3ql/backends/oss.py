@@ -472,7 +472,8 @@ class Backend(s3c.Backend):
 #         log.debug("hostname: %s" % self.hostname)  
 #         print(">>>>>>>#start----------------")
         print("auth_strs :%s" % auth_strs)
-        print("headers :%s" % headers.items) 
+        for k in headers:
+            print("headers[%s] :%s" % (k,headers[k])) 
         print("signature :%s" % signature) 
         print("accessKey :%s" % self.password) 
         print("sign_path :%s" % sign_path) 
