@@ -456,8 +456,8 @@ class Backend(s3c.Backend):
         signature = b64encode(hmac.new(self.password, ''.join(auth_strs), hashlib.sha1).digest())
         if query_string:
             params["Signature"] = signature
-        else:
-            headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
+            params["xingxn"] = "xingxiaoning"
+        headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
             
 #         log.debug("auth_string: %s " % auth_strs)
 #         log.debug("signature: %s " % signature)
@@ -486,6 +486,8 @@ class Backend(s3c.Backend):
 #            path += '&%s' % p 
         
         log.debug("path:%s" % path)
+        log.debug("method:%s" % method)
+        print("path:%s" % path)
         print("method:%s" % method)
         
         try:
