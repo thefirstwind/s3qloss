@@ -78,6 +78,7 @@ class Backend(s3c.Backend):
             headers[key_l] = headers[key]
             del headers[key]
         return headers
+    
     def _headers_parse_date(self, headers):
         # Lowercase headers
         
@@ -92,58 +93,58 @@ class Backend(s3c.Backend):
                               now.tm_min, now.tm_sec))
         return headers
 
-    def _send_request(self, method, path, headers, subres=None, query_string=None, body=None):
-        '''Add authentication and send request
-        
-        Note that *headers* is modified in-place. Returns the response object.
-        '''
-
-        # Construct full path
-        if not self.hostname.startswith(self.bucket_name):
-            path = '/%s%s' % (self.bucket_name, path)
-        path = urllib.quote(path)
-        if query_string:
-            s = urllib.urlencode(query_string, doseq=True)
-            if subres:
-                path += '?%s&%s' % (subres, s)
-            else:
-                path += '?%s' % s
-        elif subres:
-            path += '?%s' % subres
-
-        try:
-            if body is None or not self.use_expect_100c or isinstance(body, bytes):
-                # Easy case, small or no payload
-                log.debug('_send_request(): processing request for %s', path)
-                self.conn.request(method, path, body, headers)
-                return self.conn.getresponse()
-
-            # Potentially big message body, so we use 100-continue
-            log.debug('_send_request(): sending request for %s', path)
-            self.conn.putrequest(method, path)
-            headers['expect'] = '100-continue'
-            for (hdr, value) in headers.items():
-                self.conn.putheader(hdr, value)
-            self.conn.endheaders(None)
-
-            log.debug('_send_request(): Waiting for 100-cont..')
-
-            # Sneak in our own response class as instance variable,
-            # so that it knows about the body that still needs to
-            # be sent...
-            resp = s3c.HTTPResponse(self.conn.sock, body)
-            try:
-                native_response_class = self.conn.response_class
-                self.conn.response_class = resp
-                assert self.conn.getresponse() is resp
-            finally:
-                self.conn.response_class = native_response_class
-            return resp
-            
-        except:
-            # We probably can't use the connection anymore
-            self.conn.close()
-            raise
+#     def _send_request(self, method, path, headers, subres=None, query_string=None, body=None):
+#         '''Add authentication and send request
+#         
+#         Note that *headers* is modified in-place. Returns the response object.
+#         '''
+# 
+#         # Construct full path
+#         if not self.hostname.startswith(self.bucket_name):
+#             path = '/%s%s' % (self.bucket_name, path)
+#         path = urllib.quote(path)
+#         if query_string:
+#             s = urllib.urlencode(query_string, doseq=True)
+#             if subres:
+#                 path += '?%s&%s' % (subres, s)
+#             else:
+#                 path += '?%s' % s
+#         elif subres:
+#             path += '?%s' % subres
+# 
+#         try:
+#             if body is None or not self.use_expect_100c or isinstance(body, bytes):
+#                 # Easy case, small or no payload
+#                 log.debug('_send_request(): processing request for %s', path)
+#                 self.conn.request(method, path, body, headers)
+#                 return self.conn.getresponse()
+# 
+#             # Potentially big message body, so we use 100-continue
+#             log.debug('_send_request(): sending request for %s', path)
+#             self.conn.putrequest(method, path)
+#             headers['expect'] = '100-continue'
+#             for (hdr, value) in headers.items():
+#                 self.conn.putheader(hdr, value)
+#             self.conn.endheaders(None)
+# 
+#             log.debug('_send_request(): Waiting for 100-cont..')
+# 
+#             # Sneak in our own response class as instance variable,
+#             # so that it knows about the body that still needs to
+#             # be sent...
+#             resp = s3c.HTTPResponse(self.conn.sock, body)
+#             try:
+#                 native_response_class = self.conn.response_class
+#                 self.conn.response_class = resp
+#                 assert self.conn.getresponse() is resp
+#             finally:
+#                 self.conn.response_class = native_response_class
+#             return resp
+#             
+#         except:
+#             # We probably can't use the connection anymore
+#             self.conn.close()
+#             raise
 
     def _get_assign(self,secret_access_key, method, headers=None, resource="/", result=None):
         '''
@@ -334,119 +335,119 @@ class Backend(s3c.Backend):
         except NoSuchKeyError:
             raise NoSuchObject(src)
 
-    def _do_request(self, method, path, subres=None, query_string=None,
-                    headers=None, body=None):
-        '''Send request, read and return response object'''
-
-#kei
-        log.debug('_do_request(): start with parameters (%r, %r, %r, %r, %r, %r)',
-                  method, path, subres, query_string, headers, body)
-
-        if headers is None:
-            headers = dict()
-#        params = dict()
-
-        headers['connection'] = 'keep-alive'
-
-        if not body:
-            headers['content-length'] = '0'
-
-        redirect_count = 0
-        while True:
-            headers = self._to_lowercase_headers(headers)
-            
-            # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
-
-            # Always include bucket name in path for signing
-            sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
-
-            # False positive, hashlib *does* have sha1 member
-            #pylint: disable=E1101
-            
-
-            # mapping objects
-            if query_string is None:
-                query_string = dict()
-                headers = self._headers_parse_date(headers)
-                signature = self._get_assign(self.password, method, headers, sign_path)
-                headers['signature'] = signature
-                headers['user-agent'] = self.agent 
-                headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
-            else:
-                
-                send_time = str(int(time.time()) + 60)
-                headers['date'] =  str(send_time)
-                signature = self._get_assign(self.password, method, headers, sign_path)
-                query_string["ossaccesskeyid"] = self.login
-                query_string["date"] = str(send_time)
-                query_string['user-agent'] = self.agent 
-                query_string['signature'] = signature
-
-#kei
-            #print("Code: (%s)", tree.findtext('Code'))
-            log.debug('')
-            resp = self._send_request(method, path, headers, subres, query_string, body)
-            log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
-
-            if (resp.status < 300 or resp.status > 399):
-                break
-
-            # Assume redirect
-            new_url = resp.getheader('Location')
-            if new_url is None:
-                break
-            log.info('_do_request(): redirected to %s', new_url)
-                        
-            redirect_count += 1
-            if redirect_count > 10:
-                raise RuntimeError('Too many chained redirections')
-    
-            # Pylint can't infer SplitResult Types
-            #pylint: disable=E1103
-            o = urlsplit(new_url)
-            if o.scheme:
-                if isinstance(self.conn, httplib.HTTPConnection) and o.scheme != 'http':
-                    raise RuntimeError('Redirect to non-http URL')
-                elif isinstance(self.conn, httplib.HTTPSConnection) and o.scheme != 'https':
-                    raise RuntimeError('Redirect to non-https URL')
-            if o.hostname != self.hostname or o.port != self.port:
-                self.hostname = o.hostname
-                self.port = o.port
-                self.conn = self._get_conn()
-            else:
-                raise RuntimeError('Redirect to different path on same host')
-            
-            if body and not isinstance(body, bytes):
-                body.seek(0)
-
-            # Read and discard body
-            log.debug('Response body: %s', resp.read())
-
-        # We need to call read() at least once for httplib to consider this
-        # request finished, even if there is no response body.
-        if resp.length == 0:
-            resp.read()
-
-        # Success 
-        if resp.status >= 200 and resp.status <= 299:
-            return resp
-
-        # If method == HEAD, server must not return response body
-        # even in case of errors
-        if method.upper() == 'HEAD':
-            raise HTTPError(resp.status, resp.reason)
-
-        content_type = resp.getheader('Content-Type')
-        if not content_type or not XML_CONTENT_RE.match(content_type):
-            raise HTTPError(resp.status, resp.reason, resp.getheaders(), resp.read())
- 
-        # Error
-        tree = ElementTree.parse(resp).getroot()
-        print("Code: (%s)", tree.findtext('Code'))
-        print("message: (%s)", tree.findtext('Message'))
-        log.debug("Code: (%s)", tree.findtext('Code'))
-        log.debug("message: (%s)", tree.findtext('Message'))
-        raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
+#     def _do_request(self, method, path, subres=None, query_string=None,
+#                     headers=None, body=None):
+#         '''Send request, read and return response object'''
+# 
+# #kei
+#         log.debug('_do_request(): start with parameters (%r, %r, %r, %r, %r, %r)',
+#                   method, path, subres, query_string, headers, body)
+# 
+#         if headers is None:
+#             headers = dict()
+# #        params = dict()
+# 
+#         headers['connection'] = 'keep-alive'
+# 
+#         if not body:
+#             headers['content-length'] = '0'
+# 
+#         redirect_count = 0
+#         while True:
+#             headers = self._to_lowercase_headers(headers)
+#             
+#             # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
+# 
+#             # Always include bucket name in path for signing
+#             sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
+# 
+#             # False positive, hashlib *does* have sha1 member
+#             #pylint: disable=E1101
+#             
+# 
+#             # mapping objects
+#             if query_string is None:
+#                 query_string = dict()
+#                 headers = self._headers_parse_date(headers)
+#                 signature = self._get_assign(self.password, method, headers, sign_path)
+#                 headers['signature'] = signature
+#                 headers['user-agent'] = self.agent 
+#                 headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
+#             else:
+#                 
+#                 send_time = str(int(time.time()) + 60)
+#                 headers['date'] =  str(send_time)
+#                 signature = self._get_assign(self.password, method, headers, sign_path)
+#                 query_string["ossaccesskeyid"] = self.login
+#                 query_string["date"] = str(send_time)
+#                 query_string['user-agent'] = self.agent 
+#                 query_string['signature'] = signature
+# 
+# #kei
+#             #print("Code: (%s)", tree.findtext('Code'))
+#             log.debug('')
+#             resp = self._send_request(method, path, headers, subres, query_string, body)
+#             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
+# 
+#             if (resp.status < 300 or resp.status > 399):
+#                 break
+# 
+#             # Assume redirect
+#             new_url = resp.getheader('Location')
+#             if new_url is None:
+#                 break
+#             log.info('_do_request(): redirected to %s', new_url)
+#                         
+#             redirect_count += 1
+#             if redirect_count > 10:
+#                 raise RuntimeError('Too many chained redirections')
+#     
+#             # Pylint can't infer SplitResult Types
+#             #pylint: disable=E1103
+#             o = urlsplit(new_url)
+#             if o.scheme:
+#                 if isinstance(self.conn, httplib.HTTPConnection) and o.scheme != 'http':
+#                     raise RuntimeError('Redirect to non-http URL')
+#                 elif isinstance(self.conn, httplib.HTTPSConnection) and o.scheme != 'https':
+#                     raise RuntimeError('Redirect to non-https URL')
+#             if o.hostname != self.hostname or o.port != self.port:
+#                 self.hostname = o.hostname
+#                 self.port = o.port
+#                 self.conn = self._get_conn()
+#             else:
+#                 raise RuntimeError('Redirect to different path on same host')
+#             
+#             if body and not isinstance(body, bytes):
+#                 body.seek(0)
+# 
+#             # Read and discard body
+#             log.debug('Response body: %s', resp.read())
+# 
+#         # We need to call read() at least once for httplib to consider this
+#         # request finished, even if there is no response body.
+#         if resp.length == 0:
+#             resp.read()
+# 
+#         # Success 
+#         if resp.status >= 200 and resp.status <= 299:
+#             return resp
+# 
+#         # If method == HEAD, server must not return response body
+#         # even in case of errors
+#         if method.upper() == 'HEAD':
+#             raise HTTPError(resp.status, resp.reason)
+# 
+#         content_type = resp.getheader('Content-Type')
+#         if not content_type or not XML_CONTENT_RE.match(content_type):
+#             raise HTTPError(resp.status, resp.reason, resp.getheaders(), resp.read())
+#  
+#         # Error
+#         tree = ElementTree.parse(resp).getroot()
+#         print("Code: (%s)", tree.findtext('Code'))
+#         print("message: (%s)", tree.findtext('Message'))
+#         log.debug("Code: (%s)", tree.findtext('Code'))
+#         log.debug("message: (%s)", tree.findtext('Message'))
+#         raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
 
     def list(self, prefix=''):
         '''List keys in backend
