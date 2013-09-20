@@ -1,0 +1,8 @@
+[gcs-test]
+backend-login: GOOGGURDYPMCGGOLVY53
+backend-password: VxJASoLVq3N+wJGC6OGWmRdOxg+1EZ4hvUIDCsZU
+test-fs: gcs://ossfstest
+[oss-test]
+backend-login: IJ1a5Kg1ujqsrOfb
+backend-password: EKQWar0RJAqrZdeM3jXfeHeWB5LeNf
+test-fs: oss://ossbucket-test

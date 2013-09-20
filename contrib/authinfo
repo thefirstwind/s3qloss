@@ -1,0 +1,16 @@
+[gs]
+storage-url: gs://ossfs
+backend-login: GOOGGURDYPMCGGOLVY53
+backend-password: VxJASoLVq3N+wJGC6OGWmRdOxg+1EZ4hvUIDCsZU
+[oss]
+storage-url: oss://ossbucket
+backend-login: IJ1a5Kg1ujqsrOfb
+backend-password: EKQWar0RJAqrZdeM3jXfeHeWB5LeNf
+[oss]
+storage-url: oss://ossbucket-1
+backend-login: IJ1a5Kg1ujqsrOfb
+backend-password: EKQWar0RJAqrZdeM3jXfeHeWB5LeNf
+[oss]
+storage-url: oss://ossbucket-2
+backend-login: IJ1a5Kg1ujqsrOfb
+backend-password: EKQWar0RJAqrZdeM3jXfeHeWB5LeNf
