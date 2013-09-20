@@ -32,3 +32,6 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# oss original source
+src/s3ql/oss

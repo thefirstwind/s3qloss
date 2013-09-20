@@ -9,7 +9,7 @@ This program can be distributed under the terms of the GNU GPLv3.
 from __future__ import division, print_function, absolute_import
 from . import s3c
 from .common import NoSuchObject, retry
-from .s3c import HTTPError,NoSuchKeyError , XML_CONTENT_RE, get_S3Error
+from .s3c import HTTPError,NoSuchKeyError , XML_CONTENT_RE, get_S3Error,BadDigestError
 from ossfs.common import BUFSIZE,QuietError
 import logging
 import base64
@@ -667,11 +667,24 @@ class ObjectW(object):
 
         self.closed = True
         self.headers['Content-Length'] = self.obj_size
+        self.headers['Content-Type'] = 'application/octet-stream'
 
         self.fh.seek(0)
         resp = self.backend._do_request('PUT', '/%s%s' % (self.backend.prefix, self.key),
                                        headers=self.headers, body=self.fh)
+        etag = resp.getheader('ETag').strip('"')
+        log.debug("etag(%s)", etag)
+        
         assert resp.length == 0
+        if etag != self.md5.hexdigest():
+            log.warn('ObjectW(%s).close(): MD5 mismatch (%s vs %s)', self.key, etag,
+                     self.md5.hexdigest)
+            try:
+                self.backend.delete(self.key)
+            except:
+                log.exception('Objectw(%s).close(): unable to delete corrupted object!',
+                              self.key)
+            raise BadDigestError('BadDigest', 'Received ETag does not agree with our calculations.')
 
 
     def __enter__(self):
