@@ -684,6 +684,7 @@ class ObjectW(object):
         resp = self.backend._do_request('PUT', '/%s%s' % (self.backend.prefix, self.key),
                                        headers=self.headers, body=self.fh)
 
+        etag = ""
 ###kei------
 #        etag = resp.getheader('ETag').strip('"')
         if resp is not None:
