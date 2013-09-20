@@ -378,7 +378,7 @@ class Backend(s3c.Backend):
             print("-------end--------")
             raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
         except ParseError:
-            raise HTTPError("Unknow ERR")
+            raise HTTPError("ParseError")
 
 
     def clear(self):
