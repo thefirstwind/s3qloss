@@ -418,6 +418,8 @@ class Backend(s3c.Backend):
  
         # Error
         tree = ElementTree.parse(resp).getroot()
+        print("Code: (%s)", tree.findtext('Code'))
+        print("message: (%s)", tree.findtext('Message'))
         log.debug("Code: (%s)", tree.findtext('Code'))
         log.debug("message: (%s)", tree.findtext('Message'))
         raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
