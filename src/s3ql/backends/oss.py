@@ -494,7 +494,6 @@ class Backend(s3c.Backend):
         marker = start
         prefix = self.prefix + prefix
 
-        headers = dict()
         while keys_remaining:
             log.debug('list(%s): requesting with marker=%s', prefix, marker)
 
@@ -503,7 +502,7 @@ class Backend(s3c.Backend):
             resp = self._do_request('GET', '/', query_string={ 'prefix': prefix,
                                                    'marker': marker,
                                                    'delimiter': '',
-                                                   'max-keys': 1000 }, headers=headers) 
+                                                   'max-keys': 1000 }) 
 
             log.debug("Content-Type %s" % resp.getheader('Content-Type'))
             if not s3c.XML_CONTENT_RE.match(resp.getheader('Content-Type')):
@@ -512,16 +511,15 @@ class Backend(s3c.Backend):
             itree = iter(ElementTree.iterparse(resp, events=("start", "end")))
             (event, root) = itree.next()
 
-#            namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
-#            if namespace != self.namespace:
-#                raise RuntimeError('Unsupported namespace: %s' % namespace)
+            namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
+            if namespace != self.namespace:
+                raise RuntimeError('Unsupported namespace: %s' % namespace)
 
             try:
                 for (event, el) in itree:
                     if event != 'end':
                         continue
 
-#                    log.debug("tag %s :" % el.attrib);
                     if el.tag == '{%s}IsTruncated' % self.namespace:
                         keys_remaining = (el.text == 'true')
 
@@ -538,8 +536,8 @@ class Backend(s3c.Backend):
                         break
                 break
 
-#            if keys_remaining is None:
-#                raise RuntimeError('Could not parse body')
+            if keys_remaining is None:
+                raise RuntimeError('Could not parse body')
 
 def extractmeta(resp):
     '''Extract metadata from HTTP response object'''
