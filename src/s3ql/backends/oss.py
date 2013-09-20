@@ -426,7 +426,6 @@ class Backend(s3c.Backend):
             params['Expires'] = m_get_date_expires_str
             params["OSSAccessKeyId"] = self.login
             headers['Date'] = m_get_date_expires_str
-            headers['OSSAccessKeyId'] = self.login
         else:
             headers['Date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
 
@@ -460,12 +459,8 @@ class Backend(s3c.Backend):
         # False positive, hashlib *does* have sha1 member
         #pylint: disable=E1101
         
-        print("<<<<<<<<<<<<<<<<")
-        print("auth_strs :%s" % auth_strs)
-        print(">>>>>>>>>>>>>>>>")
-        print("password :%s"  % self.password)
-        print(">>>>>>>>>>>>>>>>")
-        signature = b64encode(hmac.new(self.password, ''.join(auth_strs), hashlib.sha1).digest())
+
+        signature = b64encode(hmac.new(self.password,''.join(auth_strs), hashlib.sha1).digest())
         if query_string:
             params["Signature"] = signature
         else:
@@ -481,12 +476,13 @@ class Backend(s3c.Backend):
 #         print("hostname: %s" % self.hostname)
 #         print("hostname: %s" % self.hostname)
 #         print("hostname: %s" % self.hostname)     
-        print(">>>>>>>#send----------------")
+        print(">>>>>>>#start----------------")
+        print("auth_strs :%s" % auth_strs)
         print("Date :%s" % headers['Date']) 
-        print("accessID :%s" % self.login) 
+        print("signature :%s" % signature) 
         print("accessKey :%s" % self.password) 
         print("sign_path :%s" % sign_path) 
-        print("<<<<<<<#send----------------")
+        print("<<<<<<<#end----------------")
    
         
 #-------------------------------------------------------------------------------
