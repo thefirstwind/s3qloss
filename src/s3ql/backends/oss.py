@@ -414,13 +414,19 @@ class Backend(s3c.Backend):
             del headers[key]
 
         # Date, can't use strftime because it's locale dependent
-        headers['date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
-#         m_get_date = time.time()
-#         m_get_date_str = str(int(m_get_date))
-#         m_get_date_expires_str = str(int(m_get_date_str) + 60)
-#         params = dict()
-#         params['Date'] = m_get_date_str
-#         params['Expires'] = m_get_date_expires_str
+        
+        params = dict()
+        m_get_date = time.time()
+        if method.upper() == "GET":
+            m_get_date_str = str(int(m_get_date))
+            m_get_date_expires_str = str(int(m_get_date_str) + 60)
+            params['Date'] = m_get_date_str
+            params['Expires'] = m_get_date_expires_str
+            params["OSSAccessKeyId"] = self.login
+            headers['Date'] = m_get_date_str
+        else:
+            headers['date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+
         '''
         [sign_str] 
             method + "\n" + 
@@ -446,16 +452,24 @@ class Backend(s3c.Backend):
         auth_strs.append(sign_path)
         if subres:
             auth_strs.append('?%s' % subres)
+            
 
         # False positive, hashlib *does* have sha1 member
         #pylint: disable=E1101
+        
+        
         signature = b64encode(hmac.new(self.password, ''.join(auth_strs), hashlib.sha1).digest())
+        if method.upper() == "GET":
+            params["Signature"] = signature
+        else:
+            headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
+            
         log.debug ("auth_string: %s " % auth_strs)
         log.debug ("signature: %s " % signature)
         print("auth_string: %s " % auth_strs)
         print("signature: %s " % signature)
         
-        headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
+        
 #-------------------------------------------------------------------------------
         # Construct full path
         if not self.hostname.startswith(self.bucket_name):
@@ -467,6 +481,9 @@ class Backend(s3c.Backend):
                 path += '?%s&%s' % (subres, s)
             else:
                 path += '?%s' % s
+                
+            p = urllib.urlencode(params.strip(), doseq=True)
+            path += '%s' % p
             
         elif subres:
             path += '?%s' % subres
