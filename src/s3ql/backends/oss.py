@@ -700,10 +700,11 @@ def extractmeta(resp):
     # has only been solved cleanly in S3QL 2.0.
     
     meta = dict()
-    for (name, val) in resp.getheaders():
-        hit = re.match(r'^x-oss-meta-(.+)$', name)
-        if not hit:
-            continue
-        meta[hit.group(1)] = val
+    if resp is not None:
+        for (name, val) in resp.getheaders():
+            hit = re.match(r'^x-oss-meta-(.+)$', name)
+            if not hit:
+                continue
+            meta[hit.group(1)] = val
 
     return meta
