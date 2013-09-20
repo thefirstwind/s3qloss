@@ -96,7 +96,6 @@ class Backend(s3c.Backend):
 
         signature = headers['Signature']
 
-        #headers['authorization'] = 'AWS %s:%s' % (self.login, signature)
         headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
         
 
@@ -369,7 +368,7 @@ class Backend(s3c.Backend):
             send_time = str(int(time.time()) + 60)
             headers['Date'] = send_time
             signature = self._get_assign(self.password, method, headers, sign_path)
-            headers['signature'] = signature
+            headers['Signature'] = signature
             
             # mapping objects
             if query_string is None:
