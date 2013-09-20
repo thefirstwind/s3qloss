@@ -94,11 +94,6 @@ class Backend(s3c.Backend):
         Note that *headers* is modified in-place. Returns the response object.
         '''
 
-        signature = headers['signature']
-
-        headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
-        
-
         # Construct full path
         if not self.hostname.startswith(self.bucket_name):
             path = '/%s%s' % (self.bucket_name, path)
@@ -366,20 +361,21 @@ class Backend(s3c.Backend):
             #pylint: disable=E1101
             
             send_time = str(int(time.time()) + 60)
-            headers['date'] = send_time
-            signature = self._get_assign(self.password, method, headers, sign_path)
-            headers['signature'] = signature
             
+            signature = self._get_assign(self.password, method, headers, sign_path)
+
             # mapping objects
             if query_string is None:
                 query_string = dict()
-                headers['signature'] = ''
-                headers['date'] = '' 
+                headers['signature'] = signature
+                headers['Date'] = send_time
+                headers['User-Agent'] = self.agent 
+                headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
             else:
-                query_string["ossaccesskeyid"] = self.login
-                query_string["expires"] = str(send_time)
-                query_string['user-agent'] = self.agent 
-                query_string['date'] = send_time
+                query_string["OSSAccessKeyId"] = self.login
+                query_string["Date"] = str(send_time)
+                query_string['User-Agent'] = self.agent 
+
 #kei
 
             resp = self._send_request(method, path, headers, subres, query_string, body)
