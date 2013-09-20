@@ -59,7 +59,7 @@ class Backend(s3c.Backend):
 
         bucket_name = hit.group(1)
         #hostname = '%s.oss-internal.aliyuncs.com' % bucket_name
-        hostname = '%s.oss.aliyuncs.com' % bucket_name
+        hostname = '%s.oss-internal.aliyuncs.com' % bucket_name
 
         prefix = hit.group(2) or ''
         port = 443 if use_ssl else 80
@@ -301,10 +301,12 @@ class Backend(s3c.Backend):
         while True:
                 
             resp = self._send_request(method, path, headers, subres, query_string, body)
-            print("resp:%s" % resp.getheaders())
+            log.debug("resp:%s" % resp.getheaders())
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
 
-            if (resp.status < 300 or resp.status > 399):
+            if (resp.status < 300 or resp.status > 399 ):
+                break
+            if (or resp.status == 301 or resp.status == 302):
                 break
 
             # Assume redirect
