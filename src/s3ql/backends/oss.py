@@ -544,6 +544,31 @@ class Backend(s3c.Backend):
         log.debug("string_to_sign_size: %s" % len(string_to_sign))
 
         return string_to_sign
+    
+    def _safe_get_element(self, name, container):
+        for k, v in container.items():
+            if k.strip().lower() == name.strip().lower():
+                return v
+        return ""
+    
+    def _format_header(self,headers=None):
+        '''
+        format the headers that self define
+        convert the self define headers to lower.
+        '''
+        if not headers:
+            headers = {}
+        tmp_headers = {}
+        for k in headers.keys():
+            if isinstance(headers[k], unicode):
+                headers[k] = headers[k].encode('utf-8')
+    
+            if k.lower().startswith("x-oss-"):
+                k_lower = k.lower()
+                tmp_headers[k_lower] = headers[k]
+            else:
+                tmp_headers[k] = headers[k]
+        return tmp_headers
                 
 class ObjectR(object):
     '''An S3 object open for reading'''
