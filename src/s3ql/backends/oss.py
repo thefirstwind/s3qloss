@@ -354,6 +354,8 @@ class Backend(s3c.Backend):
         content_type = resp.getheader('Content-Type')
         if not content_type or not XML_CONTENT_RE.match(content_type):
             raise HTTPError(resp.status, resp.reason, resp.getheaders(), resp.read())
+        
+        print("resp:%s" % resp)
 #keiwwwwwwwwwwwww 
         # Error
         tree = ElementTree.parse(resp).getroot()
@@ -435,6 +437,8 @@ class Backend(s3c.Backend):
         signature = b64encode(hmac.new(self.password, ''.join(auth_strs), hashlib.sha1).digest())
         log.debug ("auth_string: %s " % auth_strs)
         log.debug ("signature: %s " % signature)
+        print("auth_string: %s " % auth_strs)
+        print("signature: %s " % signature)
         
         headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
 #-------------------------------------------------------------------------------
