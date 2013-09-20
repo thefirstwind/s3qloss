@@ -25,8 +25,8 @@ from urlparse import urlsplit
 import httplib
 
 
-#HOST = "oss-internal.aliyuncs.com"
-HOST = "oss.aliyuncs.com"
+HOST = "oss-internal.aliyuncs.com"
+#HOST = "oss.aliyuncs.com"
 
 # Pylint goes berserk with false positives
 #pylint: disable=E1002,E1101,W0201
