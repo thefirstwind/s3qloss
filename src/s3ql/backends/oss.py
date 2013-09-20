@@ -150,8 +150,8 @@ class Backend(s3c.Backend):
             
             namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
 #kei--------
-#             if namespace != self.namespace:
-#                 raise RuntimeError('Unsupported namespace: %s' % namespace)
+            if namespace != self.namespace:
+                raise RuntimeError('Unsupported namespace: %s' % namespace)
  
             try:
                 for (event, el) in itree:
@@ -394,21 +394,25 @@ class Backend(s3c.Backend):
             del headers[key]
 
         # Date, can't use strftime because it's locale dependent
-#         headers['date'] = ('%s, %02d %s %04d %02d:%02d:%02d GMT'
-#                            % (C_DAY_NAMES[now.tm_wday],
-#                               now.tm_mday,
-#                               C_MONTH_NAMES[now.tm_mon - 1],
-#                               now.tm_year, now.tm_hour,
-#                               now.tm_min, now.tm_sec))
+        now = time.gmtime()
+        date_str = ('%s, %02d %s %04d %02d:%02d:%02d GMT'
+                           % (C_DAY_NAMES[now.tm_wday],
+                              now.tm_mday,
+                              C_MONTH_NAMES[now.tm_mon - 1],
+                              now.tm_year, now.tm_hour,
+                              now.tm_min, now.tm_sec))
+        headers['Date'] = date_str
+        send_time = str(int(time.time()))
+        print("ddddddddddate: %s  -  %s:",date_str,send_time)
 #         auth_strs = [method, '\n']
 #         for hdr in ('content-md5', 'content-type', 'date'):
 #             if hdr in headers:
 #                 auth_strs.append(headers[hdr])
 #             auth_strs.append('\n')
        
- #       now = time.gmtime()
-        date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
-        headers['date'] = date
+ #       
+#         date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+#         headers['Date'] = date
 
 #        auth_strs = [method, '\n']
 
@@ -433,7 +437,7 @@ class Backend(s3c.Backend):
         #pylint: disable=E1101
 #        signature = b64encode(hmac.new(self.password, ''.join(auth_strs), hashlib.sha1).digest())
 
-        headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
+        headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
 
         # Construct full path
         if not self.hostname.startswith(self.bucket_name):
@@ -675,9 +679,9 @@ class ObjectW(object):
         resp = self.backend._do_request('PUT', '/%s%s' % (self.backend.prefix, self.key),
                                        headers=self.headers, body=self.fh)
 
-        etag = ""
+#        etag = ""
 ###kei------
-#        etag = resp.getheader('ETag').strip('"')
+        etag = resp.getheader('ETag').strip('"')
         if resp is not None:
             etag = resp.getheader('ETag').strip('"')
             assert resp.length == 0
@@ -691,7 +695,7 @@ class ObjectW(object):
                 log.exception('Objectw(%s).close(): unable to delete corrupted object!',
                               self.key)
 #kei----------
-#             raise BadDigestError('BadDigest', 'Received ETag does not agree with our calculations.')
+            raise BadDigestError('BadDigest', 'Received ETag does not agree with our calculations.')
 
     def __enter__(self):
         return self
