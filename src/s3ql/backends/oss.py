@@ -367,13 +367,14 @@ class Backend(s3c.Backend):
             #pylint: disable=E1101
             
             send_time = str(int(time.time()) + 60)
-            params['Date'] = send_time
+            headers['Date'] = send_time
             signature = self._get_assign(self.password, method, headers, sign_path)
             headers['signature'] = signature
-            params["OSSAccessKeyId"] = self.login
-            params["Expires"] = str(send_time)
-            params['User-Agent'] = self.agent 
-            query_string = append_param(query_string, params)
+            query_string["OSSAccessKeyId"] = self.login
+            query_string["Expires"] = str(send_time)
+            query_string['User-Agent'] = self.agent 
+            query_string['Date'] = send_time
+#kei
 
             resp = self._send_request(method, path, headers, subres, query_string, body)
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
@@ -554,27 +555,6 @@ def extractmeta(resp):
         meta[hit.group(1)] = val
 
     return meta
-
-def append_param(url, params):
-    '''
-    convert the parameters to query string of URI.
-    '''
-    l = []
-    for k, v in params.items():
-        k = k.replace('_', '-')
-        if  k == 'maxkeys':
-            k = 'max-keys'
-        if isinstance(v, unicode):
-            v = v.encode('utf-8')
-        if v is not None and v != '':
-            l.append('%s=%s' % (urllib.quote(k), urllib.quote(str(v))))
-        elif k == 'acl':
-            l.append('%s' % (urllib.quote(k)))
-        elif v is None or v == '':
-            l.append('%s' % (urllib.quote(k)))
-    if len(l):
-        url = url + '?' + '&'.join(l)
-    return url
 
 class ObjectR(object):
     '''An S3 object open for reading'''
