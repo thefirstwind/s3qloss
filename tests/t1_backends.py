@@ -46,26 +46,26 @@ class BackendTestsMixin(object):
         self.assertEquals(self.backend[key], value)
         self.assertEquals(self.backend.lookup(key), metadata)
 
-    def test_setitem(self):
-        key = self.newname()
-        value = self.newname()
-        metadata = { 'jimmy': 'jups@42' }
-  
-        self.assertRaises(NoSuchObject, self.backend.lookup, key)
-        self.assertRaises(NoSuchObject, self.backend.__getitem__, key)
-  
-        with self.backend.open_write(key, metadata) as fh:
-            fh.write(self.newname())
-        time.sleep(self.delay)
-        self.backend[key] = value
-        time.sleep(self.delay)
-  
-        with self.backend.open_read(key) as fh:
-            value2 = fh.read()
-  
-        self.assertEquals(value, value2)
-        self.assertEquals(fh.metadata, dict())
-        self.assertEquals(self.backend.lookup(key), dict())
+#     def test_setitem(self):
+#         key = self.newname()
+#         value = self.newname()
+#         metadata = { 'jimmy': 'jups@42' }
+#   
+#         self.assertRaises(NoSuchObject, self.backend.lookup, key)
+#         self.assertRaises(NoSuchObject, self.backend.__getitem__, key)
+#   
+#         with self.backend.open_write(key, metadata) as fh:
+#             fh.write(self.newname())
+#         time.sleep(self.delay)
+#         self.backend[key] = value
+#         time.sleep(self.delay)
+#   
+#         with self.backend.open_read(key) as fh:
+#             value2 = fh.read()
+#   
+#         self.assertEquals(value, value2)
+#         self.assertEquals(fh.metadata, dict())
+#         self.assertEquals(self.backend.lookup(key), dict())
 #  
 #     def test_contains(self):
 #         key = self.newname()
