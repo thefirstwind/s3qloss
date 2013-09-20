@@ -148,7 +148,7 @@ class Backend(s3c.Backend):
             (event, root) = itree.next()
  
             log.debug("root.tag %",root.tag)
-            print("root.tag %", root.tag)
+            print("root.tag %", root['ListBucketResult'])
             namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
             if namespace != self.namespace:
                 raise RuntimeError('Unsupported namespace: %s' % namespace)
