@@ -335,7 +335,7 @@ class Backend(s3c.Backend):
 
             # Read and discard body
             log.debug('Response body: %s', resp.read())
-            print('Response body: %s', resp.read())
+#            print('Response body: %s', resp.read())
 
         # We need to call read() at least once for httplib to consider this
         # request finished, even if there is no response body.
@@ -455,8 +455,9 @@ class Backend(s3c.Backend):
         signature = b64encode(hmac.new(self.password, ''.join(auth_strs), hashlib.sha1).digest())
         if query_string:
             params["Signature"] = signature
-            params["Authorization"] = 'OSS %s:%s' % (self.login, signature)
-        headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
+#            params["Authorization"] = 'OSS %s:%s' % (self.login, signature)
+        else:
+            headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
 #         headers['Host'] = self.hostname
             
 #         log.debug("auth_string: %s " % auth_strs)
