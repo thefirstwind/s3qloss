@@ -306,7 +306,7 @@ class Backend(s3c.Backend):
 
             if (resp.status < 300 or resp.status > 399 ):
                 break
-            if (or resp.status == 301 or resp.status == 302):
+            if (resp.status == 301 or resp.status == 302):
                 break
 
             # Assume redirect
