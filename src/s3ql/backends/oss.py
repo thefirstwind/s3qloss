@@ -303,15 +303,7 @@ class Backend(s3c.Backend):
             resp = self._send_request(method, path, headers, subres, query_string, body)
             log.debug("resp:%s" % resp.getheaders())
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
-#             debugtree = ElementTree.parse(resp).getroot()     
-            print("-------start--------¥n") 
-            for k in resp.getheaders():
-                print("resp : %s"  % resp[k])
-#             print("RequestId : %s"  % debugtree.findtext('RequestId'))
-#             print("SignatureProvided : %s"  % debugtree.findtext('SignatureProvided'))
-#             print("StringToSign : %s"  % debugtree.findtext('StringToSign'))
-#             print("OSSAccessKeyId : %s"  % debugtree.findtext('OSSAccessKeyId'))
-#             print("-------end--------¥n") 
+
 
             if (resp.status < 300 or resp.status > 399 ):
                 break
@@ -371,6 +363,11 @@ class Backend(s3c.Backend):
 #keiwwwwwwwwwwwww 
         # Error
         tree = ElementTree.parse(resp).getroot()
+        print("RequestId : %s"  % tree.findtext('RequestId'))
+        print("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
+        print("StringToSign : %s"  % tree.findtext('StringToSign'))
+        print("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
+        print("-------end--------¥n") 
         raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
 
 
