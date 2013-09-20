@@ -67,9 +67,7 @@ class Backend(s3c.Backend):
         return 'oss://%s/%s' % (self.bucket_name, self.prefix)
 
 
-
-    def _headers_parse_date(self, headers):
-        # Lowercase headers
+    def _to_lowercase_headers(self, headers):
         keys = list(headers.iterkeys())
         for key in keys:
             key_l = key.lower()
@@ -77,6 +75,10 @@ class Backend(s3c.Backend):
                 continue
             headers[key_l] = headers[key]
             del headers[key]
+        return headers
+    def _headers_parse_date(self, headers):
+        # Lowercase headers
+        
 
         # Date, can't use strftime because it's locale dependent
         now = time.gmtime()
@@ -350,9 +352,9 @@ class Backend(s3c.Backend):
 
         redirect_count = 0
         while True:
+            headers = self._to_lowercase_headers(headers)
             
-            headers = self._headers_parse_date(headers);
-                    # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
+            # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
 
             # Always include bucket name in path for signing
             sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
@@ -360,22 +362,24 @@ class Backend(s3c.Backend):
             # False positive, hashlib *does* have sha1 member
             #pylint: disable=E1101
             
-            send_time = str(int(time.time()) + 60)
-            
-            signature = self._get_assign(self.password, method, headers, sign_path)
 
             # mapping objects
             if query_string is None:
                 query_string = dict()
-                headers['Signature'] = signature
-                headers['Date'] = send_time
-                headers['User-Agent'] = self.agent 
-                headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
+                headers = self._headers_parse_date(headers)
+                signature = self._get_assign(self.password, method, headers, sign_path)
+                headers['signature'] = signature
+                headers['user-agent'] = self.agent 
+                headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
             else:
-                query_string["OSSAccessKeyId"] = self.login
-                query_string["Date"] = str(send_time)
-                query_string['User-Agent'] = self.agent 
-                query_string['Signature'] = signature
+                
+                send_time = str(int(time.time()) + 60)
+                headers['date'] =  str(send_time)
+                signature = self._get_assign(self.password, method, headers, sign_path)
+                query_string["ossaccesskeyid"] = self.login
+                query_string["date"] = str(send_time)
+                query_string['user-agent'] = self.agent 
+                query_string['signature'] = signature
 
 #kei
 
