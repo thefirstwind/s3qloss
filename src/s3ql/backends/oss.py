@@ -359,8 +359,16 @@ class Backend(s3c.Backend):
         # Error
         
         tree = ElementTree.parse(resp).getroot()
-        for k in tree:
-            print("resp:%s" % k)
+
+        print("Code :%s" % tree.findtext('Code'))
+        print("Message :%s" % tree.findtext('Message'))
+        print("StringToSignBytes :%s" % tree.findtext('StringToSignBytes'))
+        print("SignatureProvided :%s" % tree.findtext('SignatureProvided'))
+        print("StringToSign :%s" % tree.findtext('StringToSign'))
+        print("OSSAccessKeyId :%s" % tree.findtext('OSSAccessKeyId'))
+        print("RequestId :%s" % tree.findtext('RequestId'))
+        print("HostId :%s" % tree.findtext('HostId'))
+        
 #         log.debug("RequestId : %s"  % tree.findtext('RequestId'))
 #         log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
 #         log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
