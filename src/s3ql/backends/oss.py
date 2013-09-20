@@ -13,8 +13,8 @@ from .s3c import HTTPError,NoSuchKeyError, XML_CONTENT_RE,ObjectW
 from .s3c import HTTPResponse,BadDigestError, get_S3Error
 from ..common import BUFSIZE,QuietError
 import logging
-#import base64 as b64encode
-from base64 import b64encode
+import base64
+import sha
 import re
 import hashlib
 import hmac
@@ -459,8 +459,8 @@ class Backend(s3c.Backend):
         # False positive, hashlib *does* have sha1 member
         #pylint: disable=E1101
         
+        signature = base64.encodestring(hmac.new(self.password, ''.join(auth_strs), sha).digest()).strip()
 
-        signature = b64encode(hmac.new(self.password,''.join(auth_strs), hashlib.sha1).digest())
         if query_string:
             params["Signature"] = signature
         else:
