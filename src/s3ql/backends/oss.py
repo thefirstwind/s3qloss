@@ -47,7 +47,7 @@ class Backend(s3c.Backend):
         super(Backend, self).__init__(storage_url, oss_key, oss_secret, use_ssl)
 
         #self.namespace = 'https://github.com/thefirstwind/ossfs/wiki/_pages'
-        self.namespace = 'http://doc.oss.alyuncs.com'
+        self.namespace = 'http://doc.oss.aliyuncs.com'
 #         self.version = __version__
 #         self.agent = "s3qloss%s (%s)" % (__version__, sys.platform)
 
