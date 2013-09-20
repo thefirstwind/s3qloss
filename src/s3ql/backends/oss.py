@@ -496,7 +496,7 @@ class Backend(s3c.Backend):
         
         log.debug("path:%s" % path)
         log.debug("method:%s" % method)
-#         print("path:%s" % path)
+        print("path:%s" % path)
 #         print("method:%s" % method)
         
         try:
