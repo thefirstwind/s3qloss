@@ -359,7 +359,7 @@ class Backend(s3c.Backend):
         # Error
         
         tree = ElementTree.parse(resp).getroot()
-
+        print("#Start------------------------------")
         print("Code :%s" % tree.findtext('Code'))
         print("Message :%s" % tree.findtext('Message'))
         print("StringToSignBytes :%s" % tree.findtext('StringToSignBytes'))
@@ -368,6 +368,7 @@ class Backend(s3c.Backend):
         print("OSSAccessKeyId :%s" % tree.findtext('OSSAccessKeyId'))
         print("RequestId :%s" % tree.findtext('RequestId'))
         print("HostId :%s" % tree.findtext('HostId'))
+        print("#End------------------------------")
         
 #         log.debug("RequestId : %s"  % tree.findtext('RequestId'))
 #         log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
