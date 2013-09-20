@@ -411,7 +411,7 @@ class Backend(s3c.Backend):
         
         params = dict()
         m_get_date = time.time()
-        if method.upper() == "GET":
+        if query_string:
             m_get_date_str = str(int(m_get_date))
             m_get_date_expires_str = str(int(m_get_date_str) + 60)
             params['Date'] = m_get_date_str
@@ -453,7 +453,7 @@ class Backend(s3c.Backend):
         
         
         signature = b64encode(hmac.new(self.password, ''.join(auth_strs), hashlib.sha1).digest())
-        if method.upper() == "GET":
+        if query_string:
             params["Signature"] = signature
         else:
             headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
@@ -478,8 +478,8 @@ class Backend(s3c.Backend):
             path += '&%s' % p 
         elif subres:
             path += '?%s' % subres
-            p = urllib.urlencode(params, doseq=True)
-            path += '&%s' % p 
+#            p = urllib.urlencode(params, doseq=True)
+#            path += '&%s' % p 
         
         print("path:%s" % path)
         print("method:%s" % method)
