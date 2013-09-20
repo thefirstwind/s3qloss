@@ -367,7 +367,7 @@ class Backend(s3c.Backend):
             # mapping objects
             if query_string is None:
                 query_string = dict()
-                headers['signature'] = signature
+                headers['Signature'] = signature
                 headers['Date'] = send_time
                 headers['User-Agent'] = self.agent 
                 headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
@@ -375,6 +375,7 @@ class Backend(s3c.Backend):
                 query_string["OSSAccessKeyId"] = self.login
                 query_string["Date"] = str(send_time)
                 query_string['User-Agent'] = self.agent 
+                query_string['Signature'] = signature
 
 #kei
 
