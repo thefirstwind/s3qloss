@@ -475,9 +475,11 @@ class Backend(s3c.Backend):
             else:
                 path += '?%s' % s
             p = urllib.urlencode(params, doseq=True)
-            path += '%s' % p 
+            path += '&%s' % p 
         elif subres:
             path += '?%s' % subres
+            p = urllib.urlencode(params, doseq=True)
+            path += '&%s' % p 
         
         print("path:%s" % path)
         print("method:%s" % method)
