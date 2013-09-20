@@ -362,17 +362,19 @@ class Backend(s3c.Backend):
             # False positive, hashlib *does* have sha1 member
             #pylint: disable=E1101
             
-            send_time = str(int(time.time()) + 60)
-            headers['date'] = str(send_time)
+
             # mapping objects
             if query_string is None:
                 query_string = dict()
-                #headers = self._headers_parse_date(headers)
+                headers = self._headers_parse_date(headers)
                 signature = self._get_assign(self.password, method, headers, sign_path)
                 headers['signature'] = signature
                 headers['user-agent'] = self.agent 
                 headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
             else:
+                
+                send_time = str(int(time.time()) + 60)
+                headers['date'] =  str(send_time)
                 signature = self._get_assign(self.password, method, headers, sign_path)
                 query_string["ossaccesskeyid"] = self.login
                 query_string["date"] = str(send_time)
