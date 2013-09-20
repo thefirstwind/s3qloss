@@ -66,29 +66,29 @@ class Backend(s3c.Backend):
     def __str__(self):
         return 'oss://%s/%s' % (self.bucket_name, self.prefix)
     
-#     @retry
-#     def delete(self, key, force=False):
-#         '''Delete the specified object'''
-# 
-#         log.debug('delete(%s)', key)
-#         try:
-#             resp = self._do_request('DELETE', '/%s%s' % (self.prefix, key))
-#             assert resp.length == 0
-#         except NoSuchKeyError:
-#             if force:
-#                 pass
-#             else:
-#                 raise NoSuchObject(key)
-# 
+    @retry
+    def delete(self, key, force=False):
+        '''Delete the specified object'''
+
+        log.debug('delete(%s)', key)
+        try:
+            resp = self._do_request('DELETE', '/%s%s' % (self.prefix, key))
+            assert resp.length == 0
+        except NoSuchKeyError:
+            if force:
+                pass
+            else:
+                raise NoSuchObject(key)
+
     def list(self, prefix=''):
         '''List keys in backend
- 
+
         Returns an iterator over all keys in the backend. This method
         handles temporary errors.
         '''
- 
+
         log.debug('list(%s): start', prefix)
- 
+
         marker = ''
         waited = 0
         interval = 1 / 50
@@ -106,28 +106,28 @@ class Backend(s3c.Backend):
                     log.error('list(): Timeout exceeded, re-raising %s exception', 
                               type(exc).__name__)
                     raise
- 
+
                 log.info('Encountered %s exception (%s), retrying call to s3c.Backend.list()',
                           type(exc).__name__, exc)
-                 
+                
                 if hasattr(exc, 'retry_after') and exc.retry_after:
                     interval = exc.retry_after
-                                     
+                                    
                 time.sleep(interval)
                 waited += interval
                 interval = min(5*60, 2*interval)
                 iterator = self._list(prefix, marker)
- 
+
             else:
                 yield marker
- 
+
     def _list(self, prefix='', start=''):
         '''List keys in backend, starting with *start*
- 
+
         Returns an iterator over all keys in the backend. This method
         does not retry on errors.
         '''
- 
+
         keys_remaining = True
         marker = start
         prefix = self.prefix + prefix
@@ -178,47 +178,47 @@ class Backend(s3c.Backend):
                 break
 
 #kei--------------- 
-#             if keys_remaining is None:
-#                 raise RuntimeError('Could not parse body')
- 
-#     @retry
-#     def lookup(self, key):
-#         """Return metadata for given key"""
-# 
-#         log.debug('lookup(%s)', key)
-# 
-#         try:
-#             resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
-#             assert resp.length == 0
-#         except HTTPError as exc:
-#             if exc.status == 404:
-#                 raise NoSuchObject(key)
-#             else:
-#                 raise
-# 
-#         return extractmeta(resp)
-# 
-#     @retry
-#     def get_size(self, key):
-#         '''Return size of object stored under *key*'''
-# 
-#         log.debug('get_size(%s)', key)
-# 
-#         try:
-#             resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
-#             assert resp.length == 0
-#         except HTTPError as exc:
-#             if exc.status == 404:
-#                 raise NoSuchObject(key)
-#             else:
-#                 raise
-# 
-#         for (name, val) in resp.getheaders():
-#             if name.lower() == 'content-length':
-#                 return int(val)
-#         raise RuntimeError('HEAD request did not return Content-Length')
-# 
-# 
+            if keys_remaining is None:
+                raise RuntimeError('Could not parse body')
+
+    @retry
+    def lookup(self, key):
+        """Return metadata for given key"""
+
+        log.debug('lookup(%s)', key)
+
+        try:
+            resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
+            assert resp.length == 0
+        except HTTPError as exc:
+            if exc.status == 404:
+                raise NoSuchObject(key)
+            else:
+                raise
+
+        return extractmeta(resp)
+
+    @retry
+    def get_size(self, key):
+        '''Return size of object stored under *key*'''
+
+        log.debug('get_size(%s)', key)
+
+        try:
+            resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
+            assert resp.length == 0
+        except HTTPError as exc:
+            if exc.status == 404:
+                raise NoSuchObject(key)
+            else:
+                raise
+
+        for (name, val) in resp.getheaders():
+            if name.lower() == 'content-length':
+                return int(val)
+        raise RuntimeError('HEAD request did not return Content-Length')
+
+
     @retry
     def open_read(self, key):
         """Open object for reading
@@ -354,9 +354,8 @@ class Backend(s3c.Backend):
             raise HTTPError(resp.status, resp.reason, resp.getheaders(), resp.read())
 #keiwwwwwwwwwwwww 
         # Error
-#        tree = ElementTree.parse(resp).getroot()
-#        raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
-    
+        tree = ElementTree.parse(resp).getroot()
+        raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
 
 
     def clear(self):
@@ -386,31 +385,15 @@ class Backend(s3c.Backend):
         # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
 
         # Lowercase headers
-        
         keys = list(headers.iterkeys())
-#         for key in keys:
-#             key_l = key.lower()
-#             if key_l == key:
-#                 continue
-#             headers[key_l] = headers[key]
-#             del headers[key]
+        for key in keys:
+            key_l = key.lower()
+            if key_l == key:
+                continue
+            headers[key_l] = headers[key]
+            del headers[key]
 
         # Date, can't use strftime because it's locale dependent
- #       now = time.gmtime()
-        date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
-        headers['Date'] = date
-        
-        # Always include bucket name in path for signing
-        sign_path = urllib.quote('/%s%s' % (self.bucket_name, "/"))
-
-        # False positive, hashlib *does* have sha1 member
-        #pylint: disable=E1101
-        signature_str = self._get_assign(method.strip().upper(), headers, sign_path)
-
-
-        #headers['authorization'] = 'AWS %s:%s' % (self.login, signature)
-#         authorization = 'OSS %s:%s' % (self.login, signature)
-
 #         headers['date'] = ('%s, %02d %s %04d %02d:%02d:%02d GMT'
 #                            % (C_DAY_NAMES[now.tm_wday],
 #                               now.tm_mday,
@@ -422,16 +405,22 @@ class Backend(s3c.Backend):
 #             if hdr in headers:
 #                 auth_strs.append(headers[hdr])
 #             auth_strs.append('\n')
-        
+       
+ #       now = time.gmtime()
+        date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+        headers['date'] = date
+
+#        auth_strs = [method, '\n']
 
 #         for hdr in sorted(x for x in headers if x.startswith('x-oss-')):
 #             val = ' '.join(re.split(r'\s*\n\s*', headers[hdr].strip()))
 #             auth_strs.append('%s:%s\n' % (hdr, val))
 
 
-#         # Always include bucket name in path for signing
-#         sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
-        
+        # Always include bucket name in path for signing
+        sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
+        signature_str = self._get_assign(method.strip().upper(), headers, sign_path)
+
         h = hmac.new(self.password, signature_str, hashlib.sha1)
         signature = base64.encodestring(h.digest()).strip()
 #         auth_strs.append(sign_path)
