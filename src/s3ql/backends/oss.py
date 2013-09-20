@@ -46,27 +46,45 @@ class Backend(s3c.Backend):
     def __init__(self, storage_url, oss_key, oss_secret, use_ssl):
         super(Backend, self).__init__(storage_url, oss_key, oss_secret, use_ssl)
 
-        #self.namespace = 'https://github.com/thefirstwind/ossfs/wiki/_pages'
+        (host, port, bucket_name, prefix) = self._parse_storage_url(storage_url, use_ssl)
+        self.bucket_name = bucket_name
+        self.prefix = prefix
+        self.hostname = host
+        self.port = port
+        self.use_ssl = use_ssl
+        self.conn = self._get_conn()
         self.namespace = 'http://doc.oss.aliyuncs.com'
-#         self.version = __version__
-#         self.agent = "s3qloss%s (%s)" % (__version__, sys.platform)
-
+        print("storage_url:%s", storage_url)
 
     @staticmethod
     def _parse_storage_url(storage_url, use_ssl):
-        hit = re.match(r'^oss://([^/]+)(?:/(.*))?$', storage_url)
+        '''Extract information from storage URL
+        
+        Return a tuple * (host, port, bucket_name, prefix) * .
+        '''
+
+        hit = re.match(r'^oss://' # Backend
+                       r'([^/:]+)' # Hostname
+                       r'(?::([0-9]+))?' # Port 
+                       r'/([^/]+)' # Bucketname
+                       r'(?:/(.*))?$', # Prefix
+                       storage_url)
         if not hit:
             raise QuietError('Invalid storage URL')
 
-        bucket_name = hit.group(1)
-        #hostname = '%s.oss-internal.aliyuncs.com' % bucket_name
-        hostname = '%s.oss.aliyuncs.com' % bucket_name
+        hostname = hit.group(1)
+        if hit.group(2):
+            port = int(hit.group(2))
+        elif use_ssl:
+            port = 443
+        else:
+            port = 80
+        bucketname = hit.group(3)
+        prefix = hit.group(4) or ''
 
-        prefix = hit.group(2) or ''
-        port = 443 if use_ssl else 80
-        return (hostname, port, bucket_name, prefix)        
+        return (hostname, port, bucketname, prefix)             
 
-
+    
 #     @retry
 #     def delete(self, key, force=False):
 #         '''Delete the specified object'''
