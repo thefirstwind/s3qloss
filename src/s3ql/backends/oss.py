@@ -28,6 +28,7 @@ import httplib
 #pylint: disable=E1002,E1101,W0201
 
 log = logging.getLogger("backends.oss")
+__version__ = '0.0.1'
 
 class Backend(s3c.Backend):
     """A backend to store data in Google Storage
@@ -45,6 +46,8 @@ class Backend(s3c.Backend):
 
         #self.namespace = 'https://github.com/thefirstwind/ossfs/wiki/_pages'
         self.namespace = 'http://doc.s3.amazonaws.com/2006-03-01'
+        self.version = __version__
+        self.agent = "s3qloss%s (%s)" % (__version__, sys.platform)
         #self.namespace = ''
 
     @staticmethod
@@ -104,7 +107,10 @@ class Backend(s3c.Backend):
         signature = self._get_assign(self.password, method, headers, sign_path)
 
         #headers['authorization'] = 'AWS %s:%s' % (self.login, signature)
-        headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
+        headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
+        headers['Signature'] = signature
+        headers["OSSAccessKeyId"] = self.login
+        headers['User-Agent'] = self.agent 
 
         # Construct full path
         if not self.hostname.startswith(self.bucket_name):
