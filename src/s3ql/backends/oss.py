@@ -643,7 +643,7 @@ class ObjectW(object):
     def is_temp_failure(self, exc):
         return self.backend.is_temp_failure(exc)
 
-    @retry
+#     @retry
     def close(self):
         pass
 #         '''Close object and upload data'''
