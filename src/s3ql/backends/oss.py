@@ -487,7 +487,11 @@ class Backend(s3c.Backend):
             
         elif subres:
             path += '?%s' % subres
-
+        
+        print("------------")
+        print("path:%s" % path)
+        print("method:%s" % method)
+        print("------------")
         try:
             if body is None or not self.use_expect_100c or isinstance(body, bytes):
                 # Easy case, small or no payload
