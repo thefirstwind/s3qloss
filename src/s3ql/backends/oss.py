@@ -24,7 +24,6 @@ import urllib
 from urlparse import urlsplit
 import httplib
 
-HOST = "oss-internal.aliyuncs.com"
 
 # Pylint goes berserk with false positives
 #pylint: disable=E1002,E1101,W0201
@@ -59,7 +58,7 @@ class Backend(s3c.Backend):
             raise QuietError('Invalid storage URL')
 
         bucket_name = hit.group(1)
-        hostname = '%s.%s' % (HOST,bucket_name)
+        hostname = '%s.oss-internal.aliyuncs.com' % bucket_name
 
         prefix = hit.group(2) or ''
         port = 443 if use_ssl else 80
