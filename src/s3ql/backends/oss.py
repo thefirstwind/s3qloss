@@ -335,6 +335,7 @@ class Backend(s3c.Backend):
 
             # Read and discard body
             log.debug('Response body: %s', resp.read())
+            print('Response body: %s', resp.read())
 
         # We need to call read() at least once for httplib to consider this
         # request finished, even if there is no response body.
@@ -358,11 +359,16 @@ class Backend(s3c.Backend):
 #TODO 2013/23:13 
         # Error
         tree = ElementTree.parse(resp).getroot()
-        log.debug("RequestId : %s"  % tree.findtext('RequestId'))
-        log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
-        log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
-        log.debug("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
-        log.debug("-------end--------")
+#         log.debug("RequestId : %s"  % tree.findtext('RequestId'))
+#         log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
+#         log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
+#         log.debug("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
+#         log.debug("-------end--------")
+        print("RequestId : %s"  % tree.findtext('RequestId'))
+        print("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
+        print("StringToSign : %s"  % tree.findtext('StringToSign'))
+        print("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
+        print("-------end--------")
         raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
 
 
@@ -409,12 +415,12 @@ class Backend(s3c.Backend):
         if query_string:
             m_get_date_str = str(int(m_get_date))
             m_get_date_expires_str = str(int(m_get_date_str) + 60)
-            params['Date'] = m_get_date_str
+            params['Date'] = m_get_date_expires_str
             params['Expires'] = m_get_date_expires_str
             params["OSSAccessKeyId"] = self.login
             headers['Date'] = m_get_date_str
         else:
-            headers['date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+            headers['Date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
 
         '''
         [sign_str] 
@@ -451,11 +457,14 @@ class Backend(s3c.Backend):
         if query_string:
             params["Signature"] = signature
         else:
-            headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
+            headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
             
-        log.debug("auth_string: %s " % auth_strs)
-        log.debug("signature: %s " % signature)
-        log.debug("hostname: %s" % self.hostname)
+#         log.debug("auth_string: %s " % auth_strs)
+#         log.debug("signature: %s " % signature)
+#         log.debug("hostname: %s" % self.hostname)
+        print("auth_string: %s " % auth_strs)
+        print("signature: %s " % signature)
+        print("hostname: %s" % self.hostname)
         
         
 #-------------------------------------------------------------------------------
