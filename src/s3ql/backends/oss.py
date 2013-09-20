@@ -361,11 +361,11 @@ class Backend(s3c.Backend):
         # Error
         try:
             tree = ElementTree.parse(resp).getroot()
-            print("RequestId : %s"  % tree.findtext('RequestId'))
-            print("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
-            print("StringToSign : %s"  % tree.findtext('StringToSign'))
-            print("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
-            print("-------end--------")
+            log.debug("RequestId : %s"  % tree.findtext('RequestId'))
+            log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
+            log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
+            log.debug("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
+            log.debug("-------end--------")
             raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
         except ParseError:
             raise HTTPError("ParseError")
@@ -458,9 +458,9 @@ class Backend(s3c.Backend):
         else:
             headers['authorization'] = 'OSS %s:%s' % (self.login, signature)
             
-        print("auth_string: %s " % auth_strs)
-        print("signature: %s " % signature)
-        print("hostname: %s" % self.hostname)
+        log.debug("auth_string: %s " % auth_strs)
+        log.debug("signature: %s " % signature)
+        log.debug("hostname: %s" % self.hostname)
         
         
 #-------------------------------------------------------------------------------
@@ -481,8 +481,8 @@ class Backend(s3c.Backend):
 #            p = urllib.urlencode(params, doseq=True)
 #            path += '&%s' % p 
         
-        print("path:%s" % path)
-        print("method:%s" % method)
+        log.debug("path:%s" % path)
+        log.debug("method:%s" % method)
         
         try:
             if body is None or not self.use_expect_100c or isinstance(body, bytes):
@@ -654,6 +654,7 @@ class ObjectW(object):
         assert resp.length == 0
 
 #        if etag != self.md5.hexdigest():
+        print("etag:%s" % etag)
         if etag:
             log.warn('ObjectW(%s).close(): MD5 mismatch (%s vs %s)', self.key, etag,
                      self.md5.hexdigest)
