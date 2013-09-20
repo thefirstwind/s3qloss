@@ -433,13 +433,14 @@ class Backend(s3c.Backend):
             del headers[key]
 
         # Date, can't use strftime because it's locale dependent
-        now = time.gmtime()
-        headers['date'] = ('%s, %02d %s %04d %02d:%02d:%02d GMT'
-                           % (C_DAY_NAMES[now.tm_wday],
-                              now.tm_mday,
-                              C_MONTH_NAMES[now.tm_mon - 1],
-                              now.tm_year, now.tm_hour,
-                              now.tm_min, now.tm_sec))
+#         now = time.gmtime()
+#         headers['date'] = ('%s, %02d %s %04d %02d:%02d:%02d GMT'
+#                            % (C_DAY_NAMES[now.tm_wday],
+#                               now.tm_mday,
+#                               C_MONTH_NAMES[now.tm_mon - 1],
+#                               now.tm_year, now.tm_hour,
+#                               now.tm_min, now.tm_sec))
+        headers['date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
 
         auth_strs = [method, '\n']
 
