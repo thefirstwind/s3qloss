@@ -184,22 +184,22 @@ class Backend(s3c.Backend):
             if keys_remaining is None:
                 raise RuntimeError('Could not parse body')
 
-    @retry
-    def lookup(self, key):
-        """Return metadata for given key"""
-
-        log.debug('lookup(%s)', key)
-
-        try:
-            resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
-            assert resp.length == 0
-        except HTTPError as exc:
-            if exc.status == 404:
-                raise NoSuchObject(key)
-            else:
-                raise
-
-        return extractmeta(resp)
+#     @retry
+#     def lookup(self, key):
+#         """Return metadata for given key"""
+# 
+#         log.debug('lookup(%s)', key)
+# 
+#         try:
+#             resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
+#             assert resp.length == 0
+#         except HTTPError as exc:
+#             if exc.status == 404:
+#                 raise NoSuchObject(key)
+#             else:
+#                 raise
+# 
+#         return extractmeta(resp)
 
     @retry
     def get_size(self, key):
