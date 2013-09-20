@@ -385,8 +385,6 @@ class Backend(s3c.Backend):
                 query_string['signature'] = signature
 
 #kei
-            #print("Code: (%s)", tree.findtext('Code'))
-            log.debug('')
             resp = self._send_request(method, path, headers, subres, query_string, body)
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
 
