@@ -371,13 +371,11 @@ class Backend(s3c.Backend):
             signature = self._get_assign(self.password, method, headers, sign_path)
             headers['signature'] = signature
             
-            if hasattr(query_string,"items"):
             # mapping objects
-                query = query_string.items()
-                query["OSSAccessKeyId"] = self.login
-                query["Expires"] = str(send_time)
-                query['User-Agent'] = self.agent 
-                query['Date'] = send_time
+            query_string["OSSAccessKeyId"] = self.login
+            query_string["Expires"] = str(send_time)
+            query_string['User-Agent'] = self.agent 
+            query_string['Date'] = send_time
 #kei
 
             resp = self._send_request(method, path, headers, subres, query_string, body)
