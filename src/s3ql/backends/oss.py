@@ -152,11 +152,11 @@ class Backend(s3c.Backend):
             headers = {}
         if not result:
             result = []
-        content_md5 = self._safe_get_element('Content-MD5', headers)
-        content_type = self._safe_get_element('Content-Type', headers)
+        content_md5 = self._safe_get_element('content-md5', headers)
+        content_type = self._safe_get_element('content-type', headers)
         canonicalized_oss_headers = ""
         log.debug("secret_access_key: %s" % secret_access_key)
-        date = self._safe_get_element('Date', headers)
+        date = self._safe_get_element('date', headers)
         canonicalized_resource = resource
         tmp_headers = self._format_header(headers)
         if len(tmp_headers) > 0:
