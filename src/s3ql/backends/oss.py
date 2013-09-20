@@ -10,7 +10,7 @@ from __future__ import division, print_function, absolute_import
 from . import s3c
 from .common import NoSuchObject, retry
 from .s3c import HTTPError,NoSuchKeyError , XML_CONTENT_RE, get_S3Error,ObjectW
-from .s3c import C_DAY_NAMES,C_MONTH_NAMES,HTTPResponse
+from .s3c import C_DAY_NAMES,C_MONTH_NAMES,HTTPResponse,BadDigestError
 from ..common import BUFSIZE,QuietError
 import logging
 #import base64 as b64encode
@@ -217,21 +217,21 @@ class Backend(s3c.Backend):
 #         raise RuntimeError('HEAD request did not return Content-Length')
 # 
 # 
-#     @retry
-#     def open_read(self, key):
-#         """Open object for reading
-# 
-#         Return a file-like object. Data can be read using the `read` method. metadata is stored in
-#         its *metadata* attribute and can be modified by the caller at will. The object must be
-#         closed explicitly.
-#         """
-# 
-#         try:
-#             resp = self._do_request('GET', '/%s%s' % (self.prefix, key))
-#         except NoSuchKeyError:
-#             raise NoSuchObject(key)
-# 
-#         return ObjectR(key, resp, self, extractmeta(resp))
+    @retry
+    def open_read(self, key):
+        """Open object for reading
+ 
+        Return a file-like object. Data can be read using the `read` method. metadata is stored in
+        its *metadata* attribute and can be modified by the caller at will. The object must be
+        closed explicitly.
+        """
+ 
+        try:
+            resp = self._do_request('GET', '/%s%s' % (self.prefix, key))
+        except NoSuchKeyError:
+            raise NoSuchObject(key)
+ 
+        return ObjectR(key, resp, self, extractmeta(resp))
 
     def open_write(self, key, metadata=None, is_compressed=False):
         """Open object for writing
@@ -471,3 +471,109 @@ class Backend(s3c.Backend):
             # We probably can't use the connection anymore
             self.conn.close()
             raise
+    
+    @retry
+    def extractmeta(self, key):
+        """Return metadata for given key"""
+
+        log.debug('lookup(%s)', key)
+
+        try:
+            resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
+            assert resp.length == 0
+        except HTTPError as exc:
+            if exc.status == 404:
+                raise NoSuchObject(key)
+            else:
+                raise
+
+        return extractmeta(resp)
+    
+    
+                
+class ObjectR(object):
+    '''An S3 object open for reading'''
+
+    def __init__(self, key, resp, backend, metadata=None):
+        self.key = key
+        self.resp = resp
+        self.md5_checked = False
+        self.backend = backend
+        self.metadata = metadata
+
+        # False positive, hashlib *does* have md5 member
+        #pylint: disable=E1101        
+        self.md5 = hashlib.md5()
+
+    def read(self, size=None):
+        '''Read object data
+        
+        For integrity checking to work, this method has to be called until
+        it returns an empty string, indicating that all data has been read
+        (and verified).
+        '''
+
+        # chunked encoding handled by httplib
+        buf = self.resp.read(size)
+
+        # Check MD5 on EOF
+        if not buf and not self.md5_checked:
+            etag = self.resp.getheader('ETag').strip('"')
+            self.md5_checked = True
+            
+            if not self.resp.isclosed():
+                # http://bugs.python.org/issue15633
+                ver = sys.version_info
+                if ((ver > (2,7,3) and ver < (3,0,0))
+                    or (ver > (3,2,3) and ver < (3,3,0))
+                    or (ver > (3,3,0))):
+                    # Should be fixed in these version
+                    log.error('ObjectR.read(): response not closed after end of data, '
+                              'please report on http://code.google.com/p/s3ql/issues/')
+                    log.error('Method: %s, chunked: %s, read length: %s '
+                              'response length: %s, chunk_left: %s, status: %d '
+                              'reason "%s", version: %s, will_close: %s',
+                              self.resp._method, self.resp.chunked, size, self.resp.length,
+                              self.resp.chunk_left, self.resp.status, self.resp.reason,
+                              self.resp.version, self.resp.will_close)
+                                    
+                self.resp.close() 
+            
+            if etag != self.md5.hexdigest():
+                log.warn('ObjectR(%s).close(): MD5 mismatch: %s vs %s', self.key, etag,
+                         self.md5.hexdigest())
+                raise BadDigestError('BadDigest', 'ETag header does not agree with calculated MD5')
+            
+            return buf
+
+        self.md5.update(buf)
+        return buf
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def close(self):
+        '''Close object'''
+
+        pass
+    
+def extractmeta(resp):
+    '''Extract metadata from HTTP response object'''
+
+    # Note: we implicitly rely on httplib to convert all headers to lower
+    # case. because HTTP headers are case sensitive (so meta data field names
+    # may have their capitalization changed). This only works, however, because
+    # the meta data field names that we use are lower case as well. This problem
+    # has only been solved cleanly in S3QL 2.0.
+    
+    meta = dict()
+    for (name, val) in resp.getheaders():
+        hit = re.match(r'^x-oss-meta-(.+)$', name)
+        if not hit:
+            continue
+        meta[hit.group(1)] = val
+
+    return meta
