@@ -569,9 +569,8 @@ class ObjectR(object):
         '''
 
         # chunked encoding handled by httplib
-        if self.resp is None:
-            self.resp = dict()
-        buf = self.resp.read(size)
+        if not self.resp:
+            buf = self.resp.read(size)
 
         # Check MD5 on EOF
         if not buf and not self.md5_checked:
