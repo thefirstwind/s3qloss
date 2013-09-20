@@ -367,7 +367,7 @@ class Backend(s3c.Backend):
         print("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
         print("StringToSign : %s"  % tree.findtext('StringToSign'))
         print("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
-        print("-------end--------¥n") 
+        print("-------end--------")
         raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
 
 
