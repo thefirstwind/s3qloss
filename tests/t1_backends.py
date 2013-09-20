@@ -67,15 +67,15 @@ class BackendTestsMixin(object):
 #         self.assertEquals(fh.metadata, dict())
 #         self.assertEquals(self.backend.lookup(key), dict())
 #   
-    def test_contains(self):
-        key = self.newname()
-        value = self.newname()
-  
-        self.assertFalse(key in self.backend)
-        self.backend[key] = value
-        time.sleep(self.delay)
-        self.assertTrue(key in self.backend)
-  
+#     def test_contains(self):
+#         key = self.newname()
+#         value = self.newname()
+#   
+#         self.assertFalse(key in self.backend)
+#         self.backend[key] = value
+#         time.sleep(self.delay)
+#         self.assertTrue(key in self.backend)
+#   
 #     def test_delete(self):
 #         key = self.newname()
 #         value = self.newname()
@@ -101,16 +101,16 @@ class BackendTestsMixin(object):
 #         self.assertTrue(key2 not in self.backend)
 #         self.assertEquals(len(list(self.backend)), 0)
 #  
-#     def test_list(self):
-#  
-#         keys = [ self.newname() for dummy in range(12) ]
-#         values = [ self.newname() for dummy in range(12) ]
-#         for i in range(12):
-#             self.backend[keys[i]] = values[i]
-#  
-#         time.sleep(self.delay)
-#         self.assertEquals(sorted(self.backend.list()), sorted(keys))
-#  
+    def test_list(self):
+  
+        keys = [ self.newname() for dummy in range(12) ]
+        values = [ self.newname() for dummy in range(12) ]
+        for i in range(12):
+            self.backend[keys[i]] = values[i]
+  
+        time.sleep(self.delay)
+        self.assertEquals(sorted(self.backend.list()), sorted(keys))
+  
 #     def test_copy(self):
 #  
 #         key1 = self.newname()
