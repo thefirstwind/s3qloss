@@ -69,30 +69,30 @@ class Backend(s3c.Backend):
         return 'oss://%s/%s' % (self.bucket_name, self.prefix)
 
 
-    def _to_lowercase_headers(self, headers):
-        keys = list(headers.iterkeys())
-        for key in keys:
-            key_l = key.lower()
-            if key_l == key:
-                continue
-            headers[key_l] = headers[key]
-            del headers[key]
-        return headers
-    
-    def _headers_parse_date(self, headers):
-        # Lowercase headers
-        
-
-        # Date, can't use strftime because it's locale dependent
-        now = time.gmtime()
-        headers['date'] = ('%s, %02d %s %04d %02d:%02d:%02d GMT'
-                           % (s3c.C_DAY_NAMES[now.tm_wday],
-                              now.tm_mday,
-                              s3c.C_MONTH_NAMES[now.tm_mon - 1],
-                              now.tm_year, now.tm_hour,
-                              now.tm_min, now.tm_sec))
-        return headers
-
+#     def _to_lowercase_headers(self, headers):
+#         keys = list(headers.iterkeys())
+#         for key in keys:
+#             key_l = key.lower()
+#             if key_l == key:
+#                 continue
+#             headers[key_l] = headers[key]
+#             del headers[key]
+#         return headers
+#     
+#     def _headers_parse_date(self, headers):
+#         # Lowercase headers
+#         
+# 
+#         # Date, can't use strftime because it's locale dependent
+#         now = time.gmtime()
+#         headers['date'] = ('%s, %02d %s %04d %02d:%02d:%02d GMT'
+#                            % (s3c.C_DAY_NAMES[now.tm_wday],
+#                               now.tm_mday,
+#                               s3c.C_MONTH_NAMES[now.tm_mon - 1],
+#                               now.tm_year, now.tm_hour,
+#                               now.tm_min, now.tm_sec))
+#         return headers
+#
 #     def _send_request(self, method, path, headers, subres=None, query_string=None, body=None):
 #         '''Add authentication and send request
 #         
@@ -145,196 +145,196 @@ class Backend(s3c.Backend):
 #             # We probably can't use the connection anymore
 #             self.conn.close()
 #             raise
-
-    def _get_assign(self,secret_access_key, method, headers=None, resource="/", result=None):
-        '''
-        Create the authorization for OSS based on header input.
-        You should put it into "Authorization" parameter of header.
-        '''
-        if not headers:
-            headers = {}
-        if not result:
-            result = []
-        content_md5 = self._safe_get_element('Content-MD5', headers)
-        content_type = self._safe_get_element('Content-Type', headers)
-        canonicalized_oss_headers = ""
-        log.debug("secret_access_key: %s" % secret_access_key)
-        date = self._safe_get_element('Date', headers)
-        canonicalized_resource = resource
-        tmp_headers = self._format_header(headers)
-        if len(tmp_headers) > 0:
-            x_header_list = tmp_headers.keys()
-            x_header_list.sort()
-            for k in x_header_list:
-                if k.startswith("x-oss-"):
-                    canonicalized_oss_headers += k + ":" + tmp_headers[k] + "\n"
-                    
-        string_to_sign = method + "\n" + content_md5.strip() + "\n" + content_type + "\n" + date + "\n" + canonicalized_oss_headers + canonicalized_resource
-        result.append(string_to_sign)
-        
-        log.debug("method: %s" % method)
-        log.debug("content_md5: %s" % content_md5)
-        log.debug("content_type: %s" % content_type)
-        log.debug("date: %s" % date)
-        log.debug("canonicalized_oss_headers: %s" % canonicalized_oss_headers)
-        log.debug("canonicalized_resource: %s" % canonicalized_resource)
-        log.debug("string_to_sign: %s" % string_to_sign)
-        log.debug("string_to_sign_size: %s" % len(string_to_sign))
-
-        h = hmac.new(secret_access_key, string_to_sign, hashlib.sha1)
-        return base64.encodestring(h.digest()).strip()
-
-    def _safe_get_element(self, name, container):
-        for k, v in container.items():
-            if k.strip().lower() == name.strip().lower():
-                return v
-        return ""
-    def _format_header(self,headers=None):
-        '''
-        format the headers that self define
-        convert the self define headers to lower.
-        '''
-        if not headers:
-            headers = {}
-        tmp_headers = {}
-        for k in headers.keys():
-            if isinstance(headers[k], unicode):
-                headers[k] = headers[k].encode('utf-8')
-    
-            if k.lower().startswith("x-oss-"):
-                k_lower = k.lower()
-                tmp_headers[k_lower] = headers[k]
-            else:
-                tmp_headers[k] = headers[k]
-        return tmp_headers
-        
-    @retry
-    def lookup(self, key):
-        """Return metadata for given key"""
-
-        log.debug('lookup(%s)', key)
-
-        try:
-            resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
-            assert resp.length == 0
-        except HTTPError as exc:
-            if exc.status == 404:
-                raise NoSuchObject(key)
-            else:
-                raise
-
-        return extractmeta(resp)
-
-    @retry
-    def get_size(self, key):
-        '''Return size of object stored under *key*'''
-
-        log.debug('get_size(%s)', key)
-
-        try:
-            resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
-            assert resp.length == 0
-        except HTTPError as exc:
-            if exc.status == 404:
-                raise NoSuchObject(key)
-            else:
-                raise
-
-        for (name, val) in resp.getheaders():
-            if name.lower() == 'content-length':
-                return int(val)
-        raise RuntimeError('HEAD request did not return Content-Length')
-    
- 
-    @retry
-    def open_read(self, key):
-        """Open object for reading
-
-        Return a file-like object. Data can be read using the `read` method. metadata is stored in
-        its *metadata* attribute and can be modified by the caller at will. The object must be
-        closed explicitly.
-        """
-
-        try:
-            resp = self._do_request('GET', '/%s%s' % (self.prefix, key))
-        except NoSuchKeyError:
-            raise NoSuchObject(key)
-
-        return ObjectR(key, resp, self, extractmeta(resp))
-
-    def open_write(self, key, metadata=None, is_compressed=False):
-        """Open object for writing
-
-        `metadata` can be a dict of additional attributes to store with the object. Returns a file-
-        like object. The object must be closed explicitly. After closing, the *get_obj_size* may be
-        used to retrieve the size of the stored object (which may differ from the size of the
-        written data).
-        
-        The *is_compressed* parameter indicates that the caller is going to write compressed data,
-        and may be used to avoid recompression by the backend.
-        """
-        
-        log.debug('open_write(%s): start', key)
-
-        headers = dict()
-        if metadata:
-            for (hdr, val) in metadata.iteritems():
-                headers['x-oss-meta-%s' % hdr] = val
-
-        return ObjectW(key, self, headers)
-    
-    def clear(self):
-        """Delete all objects in backend"""
-        
-        # We have to cache keys, because otherwise we can't use the
-        # http connection to delete keys.
-        for (no, s3key) in enumerate(list(self)):
-            if no != 0 and no % 1000 == 0:
-                log.info('clear(): deleted %d objects so far..', no)
-
-            log.debug('clear(): deleting key %s', s3key)
-
-            # Ignore missing objects when clearing backend
-            self.delete(s3key, True)
-
-    @retry
-    def delete(self, key, force=False):
-        """Delete object stored under `key`
-
-        ``backend.delete(key)`` can also be written as ``del backend[key]``.
-        If `force` is true, do not return an error if the key does not exist.
-        """
-
-        log.debug('delete(%s)', key)
-        try:
-            resp = self._do_request('DELETE', '/%s%s' % (self.prefix, key))
-            log.debug("DELETE: %s " % resp);
-            assert resp.length == 0
-        except NoSuchKeyError:
-            if force:
-                pass
-            else:
-                raise NoSuchObject(key)
-
-    @retry
-    def copy(self, src, dest):
-        """Copy data stored under key `src` to key `dest`
-        
-        If `dest` already exists, it will be overwritten. The copying
-        is done on the remote side. 
-        """
-
-        log.debug('copy(%s, %s): start', src, dest)
-
-        try:
-            resp = self._do_request('PUT', '/%s%s' % (self.prefix, dest),
-                                    headers={ 'x-oss-copy-source': '/%s/%s%s' % (self.bucket_name,
-                                                                           self.prefix, src)})
-            # Discard response body
-            resp.read()
-        except NoSuchKeyError:
-            raise NoSuchObject(src)
-
+# 
+#     def _get_assign(self,secret_access_key, method, headers=None, resource="/", result=None):
+#         '''
+#         Create the authorization for OSS based on header input.
+#         You should put it into "Authorization" parameter of header.
+#         '''
+#         if not headers:
+#             headers = {}
+#         if not result:
+#             result = []
+#         content_md5 = self._safe_get_element('Content-MD5', headers)
+#         content_type = self._safe_get_element('Content-Type', headers)
+#         canonicalized_oss_headers = ""
+#         log.debug("secret_access_key: %s" % secret_access_key)
+#         date = self._safe_get_element('Date', headers)
+#         canonicalized_resource = resource
+#         tmp_headers = self._format_header(headers)
+#         if len(tmp_headers) > 0:
+#             x_header_list = tmp_headers.keys()
+#             x_header_list.sort()
+#             for k in x_header_list:
+#                 if k.startswith("x-oss-"):
+#                     canonicalized_oss_headers += k + ":" + tmp_headers[k] + "\n"
+#                     
+#         string_to_sign = method + "\n" + content_md5.strip() + "\n" + content_type + "\n" + date + "\n" + canonicalized_oss_headers + canonicalized_resource
+#         result.append(string_to_sign)
+#         
+#         log.debug("method: %s" % method)
+#         log.debug("content_md5: %s" % content_md5)
+#         log.debug("content_type: %s" % content_type)
+#         log.debug("date: %s" % date)
+#         log.debug("canonicalized_oss_headers: %s" % canonicalized_oss_headers)
+#         log.debug("canonicalized_resource: %s" % canonicalized_resource)
+#         log.debug("string_to_sign: %s" % string_to_sign)
+#         log.debug("string_to_sign_size: %s" % len(string_to_sign))
+# 
+#         h = hmac.new(secret_access_key, string_to_sign, hashlib.sha1)
+#         return base64.encodestring(h.digest()).strip()
+# 
+#     def _safe_get_element(self, name, container):
+#         for k, v in container.items():
+#             if k.strip().lower() == name.strip().lower():
+#                 return v
+#         return ""
+#     def _format_header(self,headers=None):
+#         '''
+#         format the headers that self define
+#         convert the self define headers to lower.
+#         '''
+#         if not headers:
+#             headers = {}
+#         tmp_headers = {}
+#         for k in headers.keys():
+#             if isinstance(headers[k], unicode):
+#                 headers[k] = headers[k].encode('utf-8')
+#     
+#             if k.lower().startswith("x-oss-"):
+#                 k_lower = k.lower()
+#                 tmp_headers[k_lower] = headers[k]
+#             else:
+#                 tmp_headers[k] = headers[k]
+#         return tmp_headers
+#         
+#     @retry
+#     def lookup(self, key):
+#         """Return metadata for given key"""
+# 
+#         log.debug('lookup(%s)', key)
+# 
+#         try:
+#             resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
+#             assert resp.length == 0
+#         except HTTPError as exc:
+#             if exc.status == 404:
+#                 raise NoSuchObject(key)
+#             else:
+#                 raise
+# 
+#         return extractmeta(resp)
+# 
+#     @retry
+#     def get_size(self, key):
+#         '''Return size of object stored under *key*'''
+# 
+#         log.debug('get_size(%s)', key)
+# 
+#         try:
+#             resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
+#             assert resp.length == 0
+#         except HTTPError as exc:
+#             if exc.status == 404:
+#                 raise NoSuchObject(key)
+#             else:
+#                 raise
+# 
+#         for (name, val) in resp.getheaders():
+#             if name.lower() == 'content-length':
+#                 return int(val)
+#         raise RuntimeError('HEAD request did not return Content-Length')
+#     
+#  
+#     @retry
+#     def open_read(self, key):
+#         """Open object for reading
+# 
+#         Return a file-like object. Data can be read using the `read` method. metadata is stored in
+#         its *metadata* attribute and can be modified by the caller at will. The object must be
+#         closed explicitly.
+#         """
+# 
+#         try:
+#             resp = self._do_request('GET', '/%s%s' % (self.prefix, key))
+#         except NoSuchKeyError:
+#             raise NoSuchObject(key)
+# 
+#         return ObjectR(key, resp, self, extractmeta(resp))
+# 
+#     def open_write(self, key, metadata=None, is_compressed=False):
+#         """Open object for writing
+# 
+#         `metadata` can be a dict of additional attributes to store with the object. Returns a file-
+#         like object. The object must be closed explicitly. After closing, the *get_obj_size* may be
+#         used to retrieve the size of the stored object (which may differ from the size of the
+#         written data).
+#         
+#         The *is_compressed* parameter indicates that the caller is going to write compressed data,
+#         and may be used to avoid recompression by the backend.
+#         """
+#         
+#         log.debug('open_write(%s): start', key)
+# 
+#         headers = dict()
+#         if metadata:
+#             for (hdr, val) in metadata.iteritems():
+#                 headers['x-oss-meta-%s' % hdr] = val
+# 
+#         return ObjectW(key, self, headers)
+#     
+#     def clear(self):
+#         """Delete all objects in backend"""
+#         
+#         # We have to cache keys, because otherwise we can't use the
+#         # http connection to delete keys.
+#         for (no, s3key) in enumerate(list(self)):
+#             if no != 0 and no % 1000 == 0:
+#                 log.info('clear(): deleted %d objects so far..', no)
+# 
+#             log.debug('clear(): deleting key %s', s3key)
+# 
+#             # Ignore missing objects when clearing backend
+#             self.delete(s3key, True)
+# 
+#     @retry
+#     def delete(self, key, force=False):
+#         """Delete object stored under `key`
+# 
+#         ``backend.delete(key)`` can also be written as ``del backend[key]``.
+#         If `force` is true, do not return an error if the key does not exist.
+#         """
+# 
+#         log.debug('delete(%s)', key)
+#         try:
+#             resp = self._do_request('DELETE', '/%s%s' % (self.prefix, key))
+#             log.debug("DELETE: %s " % resp);
+#             assert resp.length == 0
+#         except NoSuchKeyError:
+#             if force:
+#                 pass
+#             else:
+#                 raise NoSuchObject(key)
+# 
+#     @retry
+#     def copy(self, src, dest):
+#         """Copy data stored under key `src` to key `dest`
+#         
+#         If `dest` already exists, it will be overwritten. The copying
+#         is done on the remote side. 
+#         """
+# 
+#         log.debug('copy(%s, %s): start', src, dest)
+# 
+#         try:
+#             resp = self._do_request('PUT', '/%s%s' % (self.prefix, dest),
+#                                     headers={ 'x-oss-copy-source': '/%s/%s%s' % (self.bucket_name,
+#                                                                            self.prefix, src)})
+#             # Discard response body
+#             resp.read()
+#         except NoSuchKeyError:
+#             raise NoSuchObject(src)
+#
 #     def _do_request(self, method, path, subres=None, query_string=None,
 #                     headers=None, body=None):
 #         '''Send request, read and return response object'''
@@ -448,260 +448,260 @@ class Backend(s3c.Backend):
 #         log.debug("Code: (%s)", tree.findtext('Code'))
 #         log.debug("message: (%s)", tree.findtext('Message'))
 #         raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
-
-    def list(self, prefix=''):
-        '''List keys in backend
-
-        Returns an iterator over all keys in the backend. This method
-        handles temporary errors.
-        '''
-
-        log.debug('list(%s): start', prefix)
-
-        marker = ''
-        waited = 0
-        interval = 1 / 50
-        iterator = self._list(prefix, marker)
-        while True:
-            try:
-                marker = iterator.next()
-                waited = 0
-            except StopIteration:
-                break
-            except Exception as exc:
-                if not self.is_temp_failure(exc):
-                    raise
-                if waited > 60 * 60:
-                    log.error('list(): Timeout exceeded, re-raising %s exception', 
-                              type(exc).__name__)
-                    raise
-
-                log.info('Encountered %s exception (%s), retrying call to s3c.Backend.list()',
-                          type(exc).__name__, exc)
-                
-                if hasattr(exc, 'retry_after') and exc.retry_after:
-                    interval = exc.retry_after
-                                    
-                time.sleep(interval)
-                waited += interval
-                interval = min(5*60, 2*interval)
-                iterator = self._list(prefix, marker)
-
-            else:
-                yield marker
-
-    def _list(self, prefix='', start=''):
-        '''List keys in backend, starting with *start*
-
-        Returns an iterator over all keys in the backend. This method
-        does not retry on errors.
-        '''
-
-        keys_remaining = True
-        marker = start
-        prefix = self.prefix + prefix
-
-        while keys_remaining:
-            log.debug('list(%s): requesting with marker=%s', prefix, marker)
-
-            keys_remaining = None
-
-            resp = self._do_request('GET', '/', query_string={ 'prefix': prefix,
-                                                   'marker': marker,
-                                                   'delimiter': '',
-                                                   'max-keys': 1000 }) 
-
-            log.debug("Content-Type %s" % resp.getheader('Content-Type'))
-            if not s3c.XML_CONTENT_RE.match(resp.getheader('Content-Type')):
-                raise RuntimeError('unexpected content type: %s' % resp.getheader('Content-Type'))
-
-            itree = iter(ElementTree.iterparse(resp, events=("start", "end")))
-            (event, root) = itree.next()
-
-            namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
-            if namespace != self.namespace:
-                raise RuntimeError('Unsupported namespace: %s' % namespace)
-
-            try:
-                for (event, el) in itree:
-                    if event != 'end':
-                        continue
-
-                    if el.tag == '{%s}IsTruncated' % self.namespace:
-                        keys_remaining = (el.text == 'true')
-
-                    elif el.tag == '{%s}Contents' % self.namespace:
-                        marker = el.findtext('{%s}Key' % self.namespace)
-                        yield marker[len(self.prefix):]
-                        root.clear()
-
-            except GeneratorExit:
-                # Need to read rest of response
-                while True:
-                    buf = resp.read(BUFSIZE)
-                    if buf == '':
-                        break
-                break
-
-            if keys_remaining is None:
-                raise RuntimeError('Could not parse body')
-
-def extractmeta(resp):
-    '''Extract metadata from HTTP response object'''
-
-    # Note: we implicitly rely on httplib to convert all headers to lower
-    # case. because HTTP headers are case sensitive (so meta data field names
-    # may have their capitalization changed). This only works, however, because
-    # the meta data field names that we use are lower case as well. This problem
-    # has only been solved cleanly in OSSFS 2.0.
-    
-    meta = dict()
-    for (name, val) in resp.getheaders():
-        hit = re.match(r'^x-oss-meta-(.+)$', name)
-        if not hit:
-            continue
-        meta[hit.group(1)] = val
-
-    return meta
-
-class ObjectR(object):
-    '''An S3 object open for reading'''
-
-    def __init__(self, key, resp, backend, metadata=None):
-        self.key = key
-        self.resp = resp
-        self.md5_checked = False
-        self.backend = backend
-        self.metadata = metadata
-
-        # False positive, hashlib *does* have md5 member
-        #pylint: disable=E1101        
-        self.md5 = hashlib.md5()
-
-    def read(self, size=None):
-        '''Read object data
-        
-        For integrity checking to work, this method has to be called until
-        it returns an empty string, indicating that all data has been read
-        (and verified).
-        '''
-
-        # chunked encoding handled by httplib
-        buf = self.resp.read(size)
-
-        # Check MD5 on EOF
-        if not buf and not self.md5_checked:
-#            etag = self.resp.getheader('ETag').strip('"')
-            self.md5_checked = True
-            
-            if not self.resp.isclosed():
-                # http://bugs.python.org/issue15633
-                ver = sys.version_info
-                if ((ver > (2,7,3) and ver < (3,0,0))
-                    or (ver > (3,2,3) and ver < (3,3,0))
-                    or (ver > (3,3,0))):
-                    # Should be fixed in these version
-                    log.error('ObjectR.read(): response not closed after end of data, '
-                              'please report on https://github.com/thefirstwind/ossfs/issues/')
-                    log.error('Method: %s, chunked: %s, read length: %s '
-                              'response length: %s, chunk_left: %s, status: %d '
-                              'reason "%s", version: %s, will_close: %s',
-                              self.resp._method, self.resp.chunked, size, self.resp.length,
-                              self.resp.chunk_left, self.resp.status, self.resp.reason,
-                              self.resp.version, self.resp.will_close)
-                                    
-                self.resp.close() 
-            
-#            if etag != self.md5.hexdigest():
-#                log.warn('ObjectR(%s).close(): MD5 mismatch: %s vs %s', self.key, etag,
-#                         self.md5.hexdigest())
-#                raise BadDigestError('BadDigest', 'ETag header does not agree with calculated MD5')
-            
-            return buf
-
-        self.md5.update(buf)
-        return buf
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *a):
-        return False
-
-    def close(self):
-        '''Close object'''
-
-        pass
-
-class ObjectW(object):
-    '''An S3 object open for writing
-    
-    All data is first cached in memory, upload only starts when
-    the close() method is called.
-    '''
-
-    def __init__(self, key, backend, headers):
-        self.key = key
-        self.backend = backend
-        self.headers = headers
-        self.closed = False
-        self.obj_size = 0
-        self.fh = tempfile.TemporaryFile(bufsize=0) # no Python buffering
-
-        # False positive, hashlib *does* have md5 member
-        #pylint: disable=E1101        
-        self.md5 = hashlib.md5()
-
-    def write(self, buf):
-        '''Write object data'''
-
-        self.fh.write(buf)
-        self.md5.update(buf)
-        self.obj_size += len(buf)
-
-    def is_temp_failure(self, exc):
-        return self.backend.is_temp_failure(exc)
-
-    @retry
-    def close(self):
-        '''Close object and upload data'''
-
-        # Access to protected member ok
-        #pylint: disable=W0212
-
-        log.debug('ObjectW(%s).close(): start', self.key)
-
-        self.closed = True
-        self.headers['Content-Length'] = self.obj_size
-        self.headers['Content-Type'] = 'application/octet-stream'
-
-        self.fh.seek(0)
-        resp = self.backend._do_request('PUT', '/%s%s' % (self.backend.prefix, self.key),
-                                       headers=self.headers, body=self.fh)
-        etag = resp.getheader('ETag').strip('"')
-        log.debug("etag(%s)", etag)
-        
-        assert resp.length == 0
-        if etag != self.md5.hexdigest():
-            log.warn('ObjectW(%s).close(): MD5 mismatch (%s vs %s)', self.key, etag,
-                     self.md5.hexdigest)
-            try:
-                self.backend.delete(self.key)
-            except:
-                log.exception('Objectw(%s).close(): unable to delete corrupted object!',
-                              self.key)
-            raise BadDigestError('BadDigest', 'Received ETag does not agree with our calculations.')
-
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *a):
-        self.close()
-        return False
-
-    def get_obj_size(self):
-        if not self.closed:
-            raise RuntimeError('Object must be closed first.')
-        return self.obj_size
+# 
+#     def list(self, prefix=''):
+#         '''List keys in backend
+# 
+#         Returns an iterator over all keys in the backend. This method
+#         handles temporary errors.
+#         '''
+# 
+#         log.debug('list(%s): start', prefix)
+# 
+#         marker = ''
+#         waited = 0
+#         interval = 1 / 50
+#         iterator = self._list(prefix, marker)
+#         while True:
+#             try:
+#                 marker = iterator.next()
+#                 waited = 0
+#             except StopIteration:
+#                 break
+#             except Exception as exc:
+#                 if not self.is_temp_failure(exc):
+#                     raise
+#                 if waited > 60 * 60:
+#                     log.error('list(): Timeout exceeded, re-raising %s exception', 
+#                               type(exc).__name__)
+#                     raise
+# 
+#                 log.info('Encountered %s exception (%s), retrying call to s3c.Backend.list()',
+#                           type(exc).__name__, exc)
+#                 
+#                 if hasattr(exc, 'retry_after') and exc.retry_after:
+#                     interval = exc.retry_after
+#                                     
+#                 time.sleep(interval)
+#                 waited += interval
+#                 interval = min(5*60, 2*interval)
+#                 iterator = self._list(prefix, marker)
+# 
+#             else:
+#                 yield marker
+# 
+#     def _list(self, prefix='', start=''):
+#         '''List keys in backend, starting with *start*
+# 
+#         Returns an iterator over all keys in the backend. This method
+#         does not retry on errors.
+#         '''
+# 
+#         keys_remaining = True
+#         marker = start
+#         prefix = self.prefix + prefix
+# 
+#         while keys_remaining:
+#             log.debug('list(%s): requesting with marker=%s', prefix, marker)
+# 
+#             keys_remaining = None
+# 
+#             resp = self._do_request('GET', '/', query_string={ 'prefix': prefix,
+#                                                    'marker': marker,
+#                                                    'delimiter': '',
+#                                                    'max-keys': 1000 }) 
+# 
+#             log.debug("Content-Type %s" % resp.getheader('Content-Type'))
+#             if not s3c.XML_CONTENT_RE.match(resp.getheader('Content-Type')):
+#                 raise RuntimeError('unexpected content type: %s' % resp.getheader('Content-Type'))
+# 
+#             itree = iter(ElementTree.iterparse(resp, events=("start", "end")))
+#             (event, root) = itree.next()
+# 
+#             namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
+#             if namespace != self.namespace:
+#                 raise RuntimeError('Unsupported namespace: %s' % namespace)
+# 
+#             try:
+#                 for (event, el) in itree:
+#                     if event != 'end':
+#                         continue
+# 
+#                     if el.tag == '{%s}IsTruncated' % self.namespace:
+#                         keys_remaining = (el.text == 'true')
+# 
+#                     elif el.tag == '{%s}Contents' % self.namespace:
+#                         marker = el.findtext('{%s}Key' % self.namespace)
+#                         yield marker[len(self.prefix):]
+#                         root.clear()
+# 
+#             except GeneratorExit:
+#                 # Need to read rest of response
+#                 while True:
+#                     buf = resp.read(BUFSIZE)
+#                     if buf == '':
+#                         break
+#                 break
+# 
+#             if keys_remaining is None:
+#                 raise RuntimeError('Could not parse body')
+# 
+# def extractmeta(resp):
+#     '''Extract metadata from HTTP response object'''
+# 
+#     # Note: we implicitly rely on httplib to convert all headers to lower
+#     # case. because HTTP headers are case sensitive (so meta data field names
+#     # may have their capitalization changed). This only works, however, because
+#     # the meta data field names that we use are lower case as well. This problem
+#     # has only been solved cleanly in OSSFS 2.0.
+#     
+#     meta = dict()
+#     for (name, val) in resp.getheaders():
+#         hit = re.match(r'^x-oss-meta-(.+)$', name)
+#         if not hit:
+#             continue
+#         meta[hit.group(1)] = val
+# 
+#     return meta
+# 
+# class ObjectR(object):
+#     '''An S3 object open for reading'''
+# 
+#     def __init__(self, key, resp, backend, metadata=None):
+#         self.key = key
+#         self.resp = resp
+#         self.md5_checked = False
+#         self.backend = backend
+#         self.metadata = metadata
+# 
+#         # False positive, hashlib *does* have md5 member
+#         #pylint: disable=E1101        
+#         self.md5 = hashlib.md5()
+# 
+#     def read(self, size=None):
+#         '''Read object data
+#         
+#         For integrity checking to work, this method has to be called until
+#         it returns an empty string, indicating that all data has been read
+#         (and verified).
+#         '''
+# 
+#         # chunked encoding handled by httplib
+#         buf = self.resp.read(size)
+# 
+#         # Check MD5 on EOF
+#         if not buf and not self.md5_checked:
+# #            etag = self.resp.getheader('ETag').strip('"')
+#             self.md5_checked = True
+#             
+#             if not self.resp.isclosed():
+#                 # http://bugs.python.org/issue15633
+#                 ver = sys.version_info
+#                 if ((ver > (2,7,3) and ver < (3,0,0))
+#                     or (ver > (3,2,3) and ver < (3,3,0))
+#                     or (ver > (3,3,0))):
+#                     # Should be fixed in these version
+#                     log.error('ObjectR.read(): response not closed after end of data, '
+#                               'please report on https://github.com/thefirstwind/ossfs/issues/')
+#                     log.error('Method: %s, chunked: %s, read length: %s '
+#                               'response length: %s, chunk_left: %s, status: %d '
+#                               'reason "%s", version: %s, will_close: %s',
+#                               self.resp._method, self.resp.chunked, size, self.resp.length,
+#                               self.resp.chunk_left, self.resp.status, self.resp.reason,
+#                               self.resp.version, self.resp.will_close)
+#                                     
+#                 self.resp.close() 
+#             
+# #            if etag != self.md5.hexdigest():
+# #                log.warn('ObjectR(%s).close(): MD5 mismatch: %s vs %s', self.key, etag,
+# #                         self.md5.hexdigest())
+# #                raise BadDigestError('BadDigest', 'ETag header does not agree with calculated MD5')
+#             
+#             return buf
+# 
+#         self.md5.update(buf)
+#         return buf
+# 
+#     def __enter__(self):
+#         return self
+# 
+#     def __exit__(self, *a):
+#         return False
+# 
+#     def close(self):
+#         '''Close object'''
+# 
+#         pass
+# 
+# class ObjectW(object):
+#     '''An S3 object open for writing
+#     
+#     All data is first cached in memory, upload only starts when
+#     the close() method is called.
+#     '''
+# 
+#     def __init__(self, key, backend, headers):
+#         self.key = key
+#         self.backend = backend
+#         self.headers = headers
+#         self.closed = False
+#         self.obj_size = 0
+#         self.fh = tempfile.TemporaryFile(bufsize=0) # no Python buffering
+# 
+#         # False positive, hashlib *does* have md5 member
+#         #pylint: disable=E1101        
+#         self.md5 = hashlib.md5()
+# 
+#     def write(self, buf):
+#         '''Write object data'''
+# 
+#         self.fh.write(buf)
+#         self.md5.update(buf)
+#         self.obj_size += len(buf)
+# 
+#     def is_temp_failure(self, exc):
+#         return self.backend.is_temp_failure(exc)
+# 
+#     @retry
+#     def close(self):
+#         '''Close object and upload data'''
+# 
+#         # Access to protected member ok
+#         #pylint: disable=W0212
+# 
+#         log.debug('ObjectW(%s).close(): start', self.key)
+# 
+#         self.closed = True
+#         self.headers['Content-Length'] = self.obj_size
+#         self.headers['Content-Type'] = 'application/octet-stream'
+# 
+#         self.fh.seek(0)
+#         resp = self.backend._do_request('PUT', '/%s%s' % (self.backend.prefix, self.key),
+#                                        headers=self.headers, body=self.fh)
+#         etag = resp.getheader('ETag').strip('"')
+#         log.debug("etag(%s)", etag)
+#         
+#         assert resp.length == 0
+#         if etag != self.md5.hexdigest():
+#             log.warn('ObjectW(%s).close(): MD5 mismatch (%s vs %s)', self.key, etag,
+#                      self.md5.hexdigest)
+#             try:
+#                 self.backend.delete(self.key)
+#             except:
+#                 log.exception('Objectw(%s).close(): unable to delete corrupted object!',
+#                               self.key)
+#             raise BadDigestError('BadDigest', 'Received ETag does not agree with our calculations.')
+# 
+# 
+#     def __enter__(self):
+#         return self
+# 
+#     def __exit__(self, *a):
+#         self.close()
+#         return False
+# 
+#     def get_obj_size(self):
+#         if not self.closed:
+#             raise RuntimeError('Object must be closed first.')
+#         return self.obj_size
 
