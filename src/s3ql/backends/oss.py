@@ -364,11 +364,11 @@ class Backend(s3c.Backend):
 #         log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
 #         log.debug("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
 #         log.debug("-------end--------")
-        print("RequestId : %s"  % tree.findtext('RequestId'))
-        print("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
-        print("StringToSign : %s"  % tree.findtext('StringToSign'))
-        print("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
-        print("-------end--------")
+#         print("RequestId : %s"  % tree.findtext('RequestId'))
+#         print("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
+#         print("StringToSign : %s"  % tree.findtext('StringToSign'))
+#         print("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
+#         print("-------end--------")
         raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
 
 
@@ -418,7 +418,6 @@ class Backend(s3c.Backend):
             params['Date'] = m_get_date_expires_str
             params['Expires'] = m_get_date_expires_str
             params["OSSAccessKeyId"] = self.login
-            headers['Date'] = m_get_date_str
         else:
             headers['Date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
 
@@ -458,14 +457,14 @@ class Backend(s3c.Backend):
             params["Signature"] = signature
             params["Authorization"] = 'OSS %s:%s' % (self.login, signature)
         headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
-        headers['Host'] = self.hostname
+#         headers['Host'] = self.hostname
             
 #         log.debug("auth_string: %s " % auth_strs)
 #         log.debug("signature: %s " % signature)
 #         log.debug("hostname: %s" % self.hostname)
-        print("auth_string: %s " % auth_strs)
-        print("signature: %s " % signature)
-        print("hostname: %s" % self.hostname)
+#         print("auth_string: %s " % auth_strs)
+#         print("signature: %s " % signature)
+#         print("hostname: %s" % self.hostname)
         
         
 #-------------------------------------------------------------------------------
@@ -488,8 +487,8 @@ class Backend(s3c.Backend):
         
         log.debug("path:%s" % path)
         log.debug("method:%s" % method)
-        print("path:%s" % path)
-        print("method:%s" % method)
+#         print("path:%s" % path)
+#         print("method:%s" % method)
         
         try:
             if body is None or not self.use_expect_100c or isinstance(body, bytes):
