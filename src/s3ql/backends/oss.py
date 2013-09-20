@@ -357,8 +357,10 @@ class Backend(s3c.Backend):
 
 #TODO 2013/23:13 
         # Error
-        print("resp:%s" % resp.getheaders())
+        
         tree = ElementTree.parse(resp).getroot()
+        for k in tree:
+            print("resp:%s" % k)
 #         log.debug("RequestId : %s"  % tree.findtext('RequestId'))
 #         log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
 #         log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
