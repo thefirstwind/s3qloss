@@ -3,3 +3,4 @@ contributed to S3QL.
 
 Nikolaus Rath <Nikolaus@rath.org>
 Louis Riviere <dugres@gmail.com>
+xing xiaoning <thefirstwind@gmail.com>

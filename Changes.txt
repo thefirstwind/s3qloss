@@ -1,3 +1,11 @@
+2013-09-20, s3qloss 1.16.1
+  
+  * add aliyun oss support by xing xiaoning <thefirstwind@gmail.com>
+  
+  * change the project name from S3QL to S3QLOSS , means that is S3QL plugin
+    for aliyun OSS
+     
+  
 2013-07-12, S3QL 1.16
 
   * Eliminated a race condition that resulted in an apparent loss of

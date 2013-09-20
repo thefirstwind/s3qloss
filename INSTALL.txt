@@ -11,7 +11,12 @@ Linux distributions:
 
   http://code.google.com/p/s3ql/w/list?q=label:Installation
 
+
 If your distribution is not included in this list, you can fall back on the
 more detailed, but also more complex General Installation Instructions in the
 S3QL User's Guide (which is included in the doc/ directory and available
 online on http://www.rath.org/s3ql-docs/).
+
+The S3QLOSS Wiki contains installation :
+
+  https://github.com/thefirstwind/s3qloss/wiki

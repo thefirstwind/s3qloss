@@ -1,12 +1,22 @@
 Metadata-Version: 1.1
+
 Name: s3ql
-Version: 1.16.1
+Version: 1.16
+
 Summary: a full-featured file system for online data storage
-Home-page: http://code.google.com/p/s3ql/
+Home-page(s3ql)   : http://code.google.com/p/s3ql/
 Author: Nikolaus Rath
 Author-email: Nikolaus@rath.org
 License: GPLv3
 Download-URL: http://code.google.com/p/s3ql/downloads/list
+
+Name: s3qloss
+Version: 1.16.1
+Summary: a s3ql plugin for aliyun oss
+Home-page(s3qloss): https://github.com/thefirstwind/s3qloss
+Author: Xing Xiaoning
+Author-email: thefirsdtwind@gmail.com
+
 Description: .. -*- mode: rst -*-
         
         ============
