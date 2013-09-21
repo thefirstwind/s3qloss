@@ -156,6 +156,11 @@ class Backend(s3c.Backend):
 #             log.debug("MaxKeys: %s" % root.findtext('MaxKeys'))
 #             log.debug("Delimiter: %s" % root.findtext('Delimiter'))
 #             log.debug("IsTruncated: %s" % root.findtext('IsTruncated'))
+            print("self.namespace: %s " % self.namespace)
+            print("namespace: %s" % namespace)
+            for k in root:
+                print("root.k: %s" % root[k])
+            
             if namespace != self.namespace:
                 raise RuntimeError('Unsupported namespace: %s' % namespace)
  
