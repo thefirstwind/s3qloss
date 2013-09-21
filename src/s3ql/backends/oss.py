@@ -457,7 +457,7 @@ class Backend(s3c.Backend):
         # Always include bucket name in path for signing
         print("xxxxxxx path xxxx: %s" % path)
 #         sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
-        sign_path = ''.append('/%s/%s' % (self.bucket_name, path))
+        sign_path = '/%s/%s' % (self.bucket_name, path)
         print("xxxxxxx sign_path xxxx: %s" % sign_path)
         auth_strs.append(sign_path)
         if subres:
