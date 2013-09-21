@@ -423,16 +423,16 @@ class Backend(s3c.Backend):
         # Date, can't use strftime because it's locale dependent
         
         params = dict()
-        m_get_date = time.time()
-        if query_string:
-            m_get_date_str = str(int(m_get_date))
-            m_get_date_expires_str = str(int(m_get_date_str) + 60)
-            params['Date'] = m_get_date_expires_str
-            params['Expires'] = m_get_date_expires_str
-            params["OSSAccessKeyId"] = self.login
-            headers['date'] = m_get_date_expires_str
-        else:
-            headers['date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+#         m_get_date = time.time()
+#         if query_string:
+#             m_get_date_str = str(int(m_get_date))
+#             m_get_date_expires_str = str(int(m_get_date_str) + 60)
+#             params['Date'] = m_get_date_expires_str
+#             params['Expires'] = m_get_date_expires_str
+#             params["OSSAccessKeyId"] = self.login
+#             headers['date'] = m_get_date_expires_str
+#         else:
+        headers['date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
 
         '''
         [sign_str] 
@@ -468,10 +468,11 @@ class Backend(s3c.Backend):
         
         signature = base64.encodestring(hmac.new(self.password, ''.join(auth_strs), sha).digest()).strip()
 
-        if query_string:
-            params["Signature"] = signature
-        else:
-            headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
+#         if query_string:
+#             params["Signature"] = signature
+#         else:
+        headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
+        
 #         headers['Host'] = self.hostname
             
 #         log.debug("auth_string: %s " % auth_strs)
@@ -498,12 +499,12 @@ class Backend(s3c.Backend):
                 path += '?%s&%s' % (subres, s)
             else:
                 path += '?%s' % s
-            p = urllib.urlencode(params, doseq=True)
-            path += '&%s' % p 
+#             p = urllib.urlencode(params, doseq=True)
+#             path += '&%s' % p 
         elif subres:
             path += '?%s' % subres
-            p = urllib.urlencode(params, doseq=True)
-            path += '&%s' % p 
+#             p = urllib.urlencode(params, doseq=True)
+#             path += '&%s' % p 
         
         log.debug("path:%s" % path)
         log.debug("method:%s" % method)
