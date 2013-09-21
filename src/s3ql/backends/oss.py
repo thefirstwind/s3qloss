@@ -455,10 +455,9 @@ class Backend(s3c.Backend):
 
 
         # Always include bucket name in path for signing
-        print("xxxxxxx path xxxx: %s" % path)
 #         sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
         sign_path = '/%s%s' % (self.bucket_name, path)
-        print("xxxxxxx sign_path xxxx: %s" % sign_path)
+        log.debug("sign_path: %s" % sign_path)
         auth_strs.append(sign_path)
         if subres:
             auth_strs.append('?%s' % subres)
@@ -473,19 +472,11 @@ class Backend(s3c.Backend):
             params["Signature"] = signature
         else:
             headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
-#         headers['Host'] = self.hostname
-            
-#         log.debug("auth_string: %s " % auth_strs)
-#         log.debug("signature: %s " % signature)
-#         log.debug("hostname: %s" % self.hostname)  
-#         print(">>>>>>>#start----------------")
-        print("auth_strs :%s" % auth_strs)
-        for k in headers:
-            print("headers[%s] :%s" % (k,headers[k])) 
-        print("signature :%s" % signature) 
-        print("accessKey :%s" % self.password) 
-        print("sign_path :%s" % sign_path) 
-        print("<<<<<<<#end----------------")
+
+        log.debug("auth_strs :%s" % auth_strs)
+        log.debug("signature :%s" % signature) 
+        log.debug("accessKey :%s" % self.password) 
+        log.debug("sign_path :%s" % sign_path) 
    
         
 #-------------------------------------------------------------------------------
@@ -508,8 +499,6 @@ class Backend(s3c.Backend):
         
         log.debug("path:%s" % path)
         log.debug("method:%s" % method)
-        print("path:%s" % path)
-#         print("method:%s" % method)
         
         try:
             if body is None or not self.use_expect_100c or isinstance(body, bytes):
@@ -612,10 +601,10 @@ class ObjectR(object):
                                     
                 self.resp.close() 
             
-#             if etag != self.md5.hexdigest():
-#                 log.warn('ObjectR(%s).close(): MD5 mismatch: %s vs %s', self.key, etag,
-#                          self.md5.hexdigest())
-#                 raise BadDigestError('BadDigest', 'ETag header does not agree with calculated MD5')
+            if etag != self.md5.hexdigest():
+                log.warn('ObjectR(%s).close(): MD5 mismatch: %s vs %s', self.key, etag,
+                         self.md5.hexdigest())
+                raise BadDigestError('BadDigest', 'ETag header does not agree with calculated MD5')
             
             return buf
 
@@ -675,21 +664,20 @@ class ObjectW(object):
         self.headers['Content-Length'] = self.obj_size
 
         self.fh.seek(0)
-        print("close.key %s - %s: " % (self.backend.prefix, self.key))
         resp = self.backend._do_request('PUT', '/%s%s' % (self.backend.prefix, self.key),
                                        headers=self.headers, body=self.fh)
         etag = resp.getheader('ETag').strip('"')
         assert resp.length == 0
 
-#        if etag != self.md5.hexdigest():
-        if etag:
-            log.warn('ObjectW(%s).close(): MD5 etag (%s)', self.key, etag)
-#            log.warn('ObjectW(%s).close(): MD5 mismatch (%s vs %s)', self.key, etag, self.md5.hexdigest)
+        if etag != self.md5.hexdigest():
+#         if etag:
+#             log.warn('ObjectW(%s).close(): MD5 etag (%s)', self.key, etag)
+            log.warn('ObjectW(%s).close(): MD5 mismatch (%s vs %s)', self.key, etag, self.md5.hexdigest)
             try:
                 self.backend.delete(self.key)
             except:
                 log.exception('Objectw(%s).close(): unable to delete corrupted object!', self.key)
-#            raise BadDigestError('BadDigest', 'Received ETag does not agree with our calculations.')
+            raise BadDigestError('BadDigest', 'Received ETag does not agree with our calculations.')
 
     def __enter__(self):
         return self
