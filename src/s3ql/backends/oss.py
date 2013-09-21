@@ -156,13 +156,13 @@ class Backend(s3c.Backend):
 #             log.debug("MaxKeys: %s" % root.findtext('MaxKeys'))
 #             log.debug("Delimiter: %s" % root.findtext('Delimiter'))
 #             log.debug("IsTruncated: %s" % root.findtext('IsTruncated'))
-            print("self.namespace: %s " % self.namespace)
-            print("namespace: %s" % namespace)
-            for (event, el) in itree:
-                print("root.contents: %s : %s" % (el.tag,el.text))
+#             print("self.namespace: %s " % self.namespace)
+#             print("namespace: %s" % namespace)
+#             for (event, el) in itree:
+#                 print("root.contents: %s : %s" % (el.tag,el.text))
             
-            if namespace != self.namespace:
-                raise RuntimeError('Unsupported namespace: %s' % namespace)
+#             if namespace != self.namespace:
+#                 raise RuntimeError('Unsupported namespace: %s' % namespace)
  
             try:
                 for (event, el) in itree:
