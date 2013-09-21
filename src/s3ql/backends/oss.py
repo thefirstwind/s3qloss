@@ -147,15 +147,15 @@ class Backend(s3c.Backend):
             itree = iter(ElementTree.iterparse(resp, events=("start", "end")))
             (event, root) = itree.next()
  
-            log.debug("root.tag %",root.tag)
+#             log.debug("root.tag %",root.tag)
             
             namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
 
-            print("Prefix: %s" % root.findtext('Prefix'))
-            print("Marker: %s" % root.findtext('Marker'))
-            print("MaxKeys: %s" % root.findtext('MaxKeys'))
-            print("Delimiter: %s" % root.findtext('Delimiter'))
-            print("IsTruncated: %s" % root.findtext('IsTruncated'))
+#             log.debug("Prefix: %s" % root.findtext('Prefix'))
+#             log.debug("Marker: %s" % root.findtext('Marker'))
+#             log.debug("MaxKeys: %s" % root.findtext('MaxKeys'))
+#             log.debug("Delimiter: %s" % root.findtext('Delimiter'))
+#             log.debug("IsTruncated: %s" % root.findtext('IsTruncated'))
             if namespace != self.namespace:
                 raise RuntimeError('Unsupported namespace: %s' % namespace)
  
@@ -339,7 +339,6 @@ class Backend(s3c.Backend):
 
             # Read and discard body
             log.debug('Response body: %s', resp.read())
-#            print('Response body: %s', resp.read())
 
         # We need to call read() at least once for httplib to consider this
         # request finished, even if there is no response body.
@@ -362,25 +361,15 @@ class Backend(s3c.Backend):
 
 #TODO 2013/23:13 
         tree = ElementTree.parse(resp).getroot()
-        print("#Start------------------------------")
-        print("Code :%s" % tree.findtext('Code'))
-        print("Message :%s" % tree.findtext('Message'))
-        print("HostId :%s" % tree.findtext('HostId'))
-        print("RequestId :%s" % tree.findtext('RequestId'))
-        print("OSSAccessKeyId :%s" % tree.findtext('OSSAccessKeyId'))
-        print("SignatureProvided :%s" % tree.findtext('SignatureProvided'))
-        print("StringToSign :%s" % tree.findtext('StringToSign'))
-        print("#End------------------------------")
-#         log.debug("RequestId : %s"  % tree.findtext('RequestId'))
-#         log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
-#         log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
-#         log.debug("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
-#         log.debug("-------end--------")
-#         print("RequestId : %s"  % tree.findtext('RequestId'))
-#         print("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
-#         print("StringToSign : %s"  % tree.findtext('StringToSign'))
-#         print("OSSAccessKeyId : %s"  % tree.findtext('OSSAccessKeyId'))
-#         print("-------end--------")
+#         log.debug("#Start------------------------------")
+#         log.debug("Code :%s" % tree.findtext('Code'))
+#         log.debug("Message :%s" % tree.findtext('Message'))
+#         log.debug("HostId :%s" % tree.findtext('HostId'))
+#         log.debug("RequestId :%s" % tree.findtext('RequestId'))
+#         log.debug("OSSAccessKeyId :%s" % tree.findtext('OSSAccessKeyId'))
+#         log.debug("SignatureProvided :%s" % tree.findtext('SignatureProvided'))
+#         log.debug("StringToSign :%s" % tree.findtext('StringToSign'))
+#         log.debug("#End------------------------------")
         raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
 
 
@@ -472,20 +461,13 @@ class Backend(s3c.Backend):
 #             params["Signature"] = signature
 #         else:
         headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
-        
-#         headers['Host'] = self.hostname
-            
-#         log.debug("auth_string: %s " % auth_strs)
-#         log.debug("signature: %s " % signature)
-#         log.debug("hostname: %s" % self.hostname)  
-#         print(">>>>>>>#start----------------")
-        print("auth_strs :%s" % auth_strs)
-        for k in headers:
-            print("headers[%s] :%s" % (k,headers[k])) 
-        print("signature :%s" % signature) 
-        print("accessKey :%s" % self.password) 
-        print("sign_path :%s" % sign_path) 
-        print("<<<<<<<#end----------------")
+#         log.debug("auth_strs :%s" % auth_strs)
+#         for k in headers:
+#             log.debug("headers[%s] :%s" % (k,headers[k])) 
+#         log.debug("signature :%s" % signature) 
+#         log.debug("accessKey :%s" % self.password) 
+#         log.debug("sign_path :%s" % sign_path) 
+#         log.debug("<<<<<<<#end----------------")
    
         
 #-------------------------------------------------------------------------------
@@ -508,8 +490,6 @@ class Backend(s3c.Backend):
         
         log.debug("path:%s" % path)
         log.debug("method:%s" % method)
-        print("path:%s" % path)
-#         print("method:%s" % method)
         
         try:
             if body is None or not self.use_expect_100c or isinstance(body, bytes):
