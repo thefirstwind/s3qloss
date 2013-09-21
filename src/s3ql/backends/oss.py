@@ -345,17 +345,7 @@ class Backend(s3c.Backend):
         # request finished, even if there is no response body.
         if resp.length == 0:
             resp.read()
-            
-        tree = ElementTree.parse(resp).getroot()
-        print("#Start------------------------------")
-        print("Code :%s" % tree.findtext('Code'))
-        print("Message :%s" % tree.findtext('Message'))
-        print("HostId :%s" % tree.findtext('HostId'))
-        print("RequestId :%s" % tree.findtext('RequestId'))
-        print("OSSAccessKeyId :%s" % tree.findtext('OSSAccessKeyId'))
-        print("SignatureProvided :%s" % tree.findtext('SignatureProvided'))
-        print("StringToSign :%s" % tree.findtext('StringToSign'))
-        print("#End------------------------------")
+
         # Success 
         if resp.status >= 200 and resp.status <= 299:
             return resp
@@ -371,16 +361,16 @@ class Backend(s3c.Backend):
             raise HTTPError(resp.status, resp.reason, resp.getheaders(), resp.read())
 
 #TODO 2013/23:13 
-#         tree = ElementTree.parse(resp).getroot()
-#         print("#Start------------------------------")
-#         print("Code :%s" % tree.findtext('Code'))
-#         print("Message :%s" % tree.findtext('Message'))
-#         print("HostId :%s" % tree.findtext('HostId'))
-#         print("RequestId :%s" % tree.findtext('RequestId'))
-#         print("OSSAccessKeyId :%s" % tree.findtext('OSSAccessKeyId'))
-#         print("SignatureProvided :%s" % tree.findtext('SignatureProvided'))
-#         print("StringToSign :%s" % tree.findtext('StringToSign'))
-#         print("#End------------------------------")
+        tree = ElementTree.parse(resp).getroot()
+        print("#Start------------------------------")
+        print("Code :%s" % tree.findtext('Code'))
+        print("Message :%s" % tree.findtext('Message'))
+        print("HostId :%s" % tree.findtext('HostId'))
+        print("RequestId :%s" % tree.findtext('RequestId'))
+        print("OSSAccessKeyId :%s" % tree.findtext('OSSAccessKeyId'))
+        print("SignatureProvided :%s" % tree.findtext('SignatureProvided'))
+        print("StringToSign :%s" % tree.findtext('StringToSign'))
+        print("#End------------------------------")
 #         log.debug("RequestId : %s"  % tree.findtext('RequestId'))
 #         log.debug("SignatureProvided : %s"  % tree.findtext('SignatureProvided'))
 #         log.debug("StringToSign : %s"  % tree.findtext('StringToSign'))
@@ -467,7 +457,7 @@ class Backend(s3c.Backend):
         # Always include bucket name in path for signing
 #         sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
         sign_path = '/%s%s' % (self.bucket_name, path)
-        log.debug("sign_path: %s" % sign_path)
+        log.debug("sign_path : %s" % sign_path)
         auth_strs.append(sign_path)
         if subres:
             auth_strs.append('?%s' % subres)
