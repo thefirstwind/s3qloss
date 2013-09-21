@@ -141,24 +141,16 @@ class Backend(s3c.Backend):
                                                               'marker': marker,
                                                               'max-keys': 1000 })
  
-#             print("resp: %s " % resp)
             if not XML_CONTENT_RE.match(resp.getheader('Content-Type')):
                 raise RuntimeError('unexpected content type: %s' % resp.getheader('Content-Type'))
  
             itree = iter(ElementTree.iterparse(resp, events=("start", "end")))
-#             for k in itree.:
-#                  print("itree.k: %s " % itree[k])
             (event, root) = itree.next()
  
             log.debug("root.tag %",root.tag)
             
             namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
 
-#             for k in root:
-#                 print("root.tag :%s " % k)
-            
-#             root.tag :<Element 'Name' at 0x3418e10> 
-#             print("root docs: % " % root)
             print("Prefix: %s" % root.findtext('Prefix'))
             print("Marker: %s" % root.findtext('Marker'))
             print("MaxKeys: %s" % root.findtext('MaxKeys'))
@@ -418,7 +410,7 @@ class Backend(s3c.Backend):
 
         # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
 #-------------------------------------------------------------------------------
-
+        print("_send_request.path %" % path)
         # Lowercase headers
         keys = list(headers.iterkeys())
         for key in keys:
@@ -557,6 +549,7 @@ class Backend(s3c.Backend):
         log.debug('lookup(%s)', key)
 
         try:
+            print("extractmeta.key %s : " % key)
             resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
             assert resp.length == 0
         except HTTPError as exc:
