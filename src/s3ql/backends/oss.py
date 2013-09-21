@@ -146,7 +146,8 @@ class Backend(s3c.Backend):
                 raise RuntimeError('unexpected content type: %s' % resp.getheader('Content-Type'))
  
             itree = iter(ElementTree.iterparse(resp, events=("start", "end")))
-            print("itree: %s " % itree)
+#             for k in itree.:
+#                  print("itree.k: %s " % itree[k])
             (event, root) = itree.next()
  
             log.debug("root.tag %",root.tag)
