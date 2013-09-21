@@ -158,8 +158,8 @@ class Backend(s3c.Backend):
 #             log.debug("IsTruncated: %s" % root.findtext('IsTruncated'))
             print("self.namespace: %s " % self.namespace)
             print("namespace: %s" % namespace)
-            for k in root:
-                print("root.k: %s" % root[k])
+            for (event, el) in itree:
+                print("root.contents: %s : %s" % (el.tag,el.text))
             
             if namespace != self.namespace:
                 raise RuntimeError('Unsupported namespace: %s' % namespace)
