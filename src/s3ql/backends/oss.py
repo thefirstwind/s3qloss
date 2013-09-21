@@ -455,7 +455,9 @@ class Backend(s3c.Backend):
 
 
         # Always include bucket name in path for signing
+        print("xxxxxxx path xxxx: %s" % path)
         sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
+        print("xxxxxxx sign_path xxxx: %s" % sign_path)
         auth_strs.append(sign_path)
         if subres:
             auth_strs.append('?%s' % subres)
@@ -549,7 +551,6 @@ class Backend(s3c.Backend):
         log.debug('lookup(%s)', key)
 
         try:
-            print("extractmeta.key %s : " % key)
             resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
             assert resp.length == 0
         except HTTPError as exc:
@@ -673,6 +674,7 @@ class ObjectW(object):
         self.headers['Content-Length'] = self.obj_size
 
         self.fh.seek(0)
+        print("close.key %s - %s: " % (self.backend.prefix, self.key))
         resp = self.backend._do_request('PUT', '/%s%s' % (self.backend.prefix, self.key),
                                        headers=self.headers, body=self.fh)
         etag = resp.getheader('ETag').strip('"')
