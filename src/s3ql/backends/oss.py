@@ -189,7 +189,8 @@ class Backend(s3c.Backend):
                 break
 
             if keys_remaining is None:
-                raise RuntimeError('Could not parse body')
+                break
+#                 raise RuntimeError('Could not parse body')
 
     @retry
     def lookup(self, key):
