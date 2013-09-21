@@ -410,7 +410,7 @@ class Backend(s3c.Backend):
 
         # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
 #-------------------------------------------------------------------------------
-        print("_send_request.path %" % path)
+        print("_send_request.path %s" % path)
         # Lowercase headers
         keys = list(headers.iterkeys())
         for key in keys:
