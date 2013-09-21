@@ -149,7 +149,7 @@ class Backend(s3c.Backend):
  
 #             log.debug("root.tag %",root.tag)
             
-            namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
+#             namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
 
 #             log.debug("Prefix: %s" % root.findtext('Prefix'))
 #             log.debug("Marker: %s" % root.findtext('Marker'))
