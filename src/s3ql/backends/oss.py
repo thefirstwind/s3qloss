@@ -376,6 +376,16 @@ class Backend(s3c.Backend):
 #         log.debug("SignatureProvided :%s" % tree.findtext('SignatureProvided'))
 #         log.debug("StringToSign :%s" % tree.findtext('StringToSign'))
 #         log.debug("#End------------------------------")
+        print("#Start------------------------------")
+        print("Code :%s" % tree.findtext('Code'))
+        print("Message :%s" % tree.findtext('Message'))
+        print("HostId :%s" % tree.findtext('HostId'))
+        print("RequestId :%s" % tree.findtext('RequestId'))
+        print("OSSAccessKeyId :%s" % tree.findtext('OSSAccessKeyId'))
+        print("SignatureProvided :%s" % tree.findtext('SignatureProvided'))
+        print("StringToSign :%s" % tree.findtext('StringToSign'))
+        print("#End------------------------------")
+
         raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
 
 
@@ -474,6 +484,13 @@ class Backend(s3c.Backend):
 #         log.debug("accessKey :%s" % self.password) 
 #         log.debug("sign_path :%s" % sign_path) 
 #         log.debug("<<<<<<<#end----------------")
+        print("auth_strs :%s" % auth_strs)
+        for k in headers:
+            print("headers[%s] :%s" % (k,headers[k])) 
+        print("signature :%s" % signature) 
+        print("accessKey :%s" % self.password) 
+        print("sign_path :%s" % sign_path) 
+        print("<<<<<<<#end----------------")
    
         
 #-------------------------------------------------------------------------------
