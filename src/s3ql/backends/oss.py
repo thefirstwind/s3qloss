@@ -410,7 +410,7 @@ class Backend(s3c.Backend):
 
         # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
 #-------------------------------------------------------------------------------
-        print("_send_request.path %s" % path)
+        log.debug("_send_request.path %s" % path)
         # Lowercase headers
         keys = list(headers.iterkeys())
         for key in keys:
@@ -674,7 +674,6 @@ class ObjectW(object):
         self.headers['Content-Length'] = self.obj_size
 
         self.fh.seek(0)
-        print("close.key %s - %s: " % (self.backend.prefix, self.key))
         resp = self.backend._do_request('PUT', '/%s%s' % (self.backend.prefix, self.key),
                                        headers=self.headers, body=self.fh)
         etag = resp.getheader('ETag').strip('"')
