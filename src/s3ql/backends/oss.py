@@ -141,27 +141,28 @@ class Backend(s3c.Backend):
                                                               'marker': marker,
                                                               'max-keys': 1000 })
  
+            print("resp: %s " % resp)
             if not XML_CONTENT_RE.match(resp.getheader('Content-Type')):
                 raise RuntimeError('unexpected content type: %s' % resp.getheader('Content-Type'))
  
             itree = iter(ElementTree.iterparse(resp, events=("start", "end")))
+            print("itree: %s " % itree)
             (event, root) = itree.next()
  
             log.debug("root.tag %",root.tag)
             
             namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
-#             if (namespace is None)
-            for k in root:
-                print("root.tag :%s " % k)
+
+#             for k in root:
+#                 print("root.tag :%s " % k)
             
 #             root.tag :<Element 'Name' at 0x3418e10> 
-
             print("root docs: % " % root)
             print("Prefix: %s" % root.findtext('Prefix'))
             print("Marker: %s" % root.findtext('Marker'))
+            print("MaxKeys: %s" % root.findtext('MaxKeys'))
             print("Delimiter: %s" % root.findtext('Delimiter'))
-            print("Delimiter: %s" % root.findtext('Delimiter'))
-            print("Delimiter: %s" % root.findtext('Delimiter'))
+            print("IsTruncated: %s" % root.findtext('IsTruncated'))
             if namespace != self.namespace:
                 raise RuntimeError('Unsupported namespace: %s' % namespace)
  
