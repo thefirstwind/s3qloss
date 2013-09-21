@@ -153,8 +153,15 @@ class Backend(s3c.Backend):
 #             if (namespace is None)
             for k in root:
                 print("root.tag :%s " % k)
+            
+#             root.tag :<Element 'Name' at 0x3418e10> 
+
             print("root docs: % " % root)
-#             print("namespace: %s" % root.findtext('ListBucketResult'))
+            print("Prefix: %s" % root.findtext('Prefix'))
+            print("Marker: %s" % root.findtext('Marker'))
+            print("Delimiter: %s" % root.findtext('Delimiter'))
+            print("Delimiter: %s" % root.findtext('Delimiter'))
+            print("Delimiter: %s" % root.findtext('Delimiter'))
             if namespace != self.namespace:
                 raise RuntimeError('Unsupported namespace: %s' % namespace)
  
