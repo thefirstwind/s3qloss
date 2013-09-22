@@ -27,7 +27,7 @@ class BackendTestsMixin(object):
         return "s3ql_t/_%d" % self.name_cnt
 
     #Test OK
-     def test_write(self):
+    def test_write(self):
           
          print(">>>>test_write:No1")
          key = self.newname()
