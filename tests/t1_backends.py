@@ -27,26 +27,38 @@ class BackendTestsMixin(object):
         #return "s3ql_t/_%d" % self.name_cnt
 
     def test_write(self):
+        
+        print(">>>>test_write:No1")
         key = self.newname()
         print("key: %s" % key)
+        
+        print(">>>>test_write:No2")
         value = self.newname()
         print("value: %s" % value)
         metadata = { 'jimmy': 'jups@42' }
    
+        print(">>>>test_write:No3")
         self.assertRaises(NoSuchObject, self.backend.lookup, key)
+        print(">>>>test_write:No4")
         self.assertRaises(NoSuchObject, self.backend.fetch, key)
    
+        print(">>>>test_write:No5")
         with self.backend.open_write(key, metadata) as fh:
             fh.write(value)
    
         time.sleep(self.delay)
-   
+        
+        print(">>>>test_write:No6")
         with self.backend.open_read(key) as fh:
             value2 = fh.read()
-   
+        
+        print(">>>>test_write:No7")
         self.assertEquals(value, value2)
+        print(">>>>test_write:No8")
         self.assertEquals(metadata, fh.metadata)
+        print(">>>>test_write:No9")
         self.assertEquals(self.backend[key], value)
+        print(">>>>test_write:No10")
         self.assertEquals(self.backend.lookup(key), metadata)
  
 #     def test_setitem(self):
