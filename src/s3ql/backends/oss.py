@@ -47,7 +47,7 @@ class Backend(s3c.Backend):
     def __init__(self, storage_url, oss_key, oss_secret, use_ssl):
         super(Backend, self).__init__(storage_url, oss_key, oss_secret, use_ssl)
         
-        self.namespace = 'http://doc.oss.aliyuncs.com'
+#         self.namespace = 'http://doc.oss.aliyuncs.com'
 
 
     @staticmethod
