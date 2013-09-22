@@ -9,7 +9,7 @@ This program can be distributed under the terms of the GNU GPLv3.
 from __future__ import division, print_function, absolute_import
 from . import s3c
 from .common import NoSuchObject, retry
-from .s3c import HTTPError,NoSuchKeyError, XML_CONTENT_RE,ObjectW
+from .s3c import HTTPError,NoSuchKeyError, XML_CONTENT_RE
 from .s3c import HTTPResponse,BadDigestError, get_S3Error
 from ..common import BUFSIZE,QuietError
 import logging
@@ -260,13 +260,14 @@ class Backend(s3c.Backend):
         Since Amazon S3 does not support chunked uploads, the entire data will
         be buffered in memory before upload.
         """
-
+        print ("open_write key : %s" % key)
         log.debug('open_write(%s): start', key)
 
         headers = dict()
         if metadata:
             for (hdr, val) in metadata.iteritems():
                 headers['x-oss-meta-%s' % hdr] = val
+                print("x-oss-meta-%s: %s" % (hdr,val))
 
         return ObjectW(key, self, headers)
 

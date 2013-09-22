@@ -23,12 +23,14 @@ class BackendTestsMixin(object):
     def newname(self):
         self.name_cnt += 1
         # Include special characters
-        #return "s3ql_=/_%d" % self.name_cnt
-        return "s3ql_t/_%d" % self.name_cnt
+        return "s3ql_=/_%d" % self.name_cnt
+        #return "s3ql_t/_%d" % self.name_cnt
 
     def test_write(self):
         key = self.newname()
+        print("key: %s" % key)
         value = self.newname()
+        print("value: %s" % value)
         metadata = { 'jimmy': 'jups@42' }
    
         self.assertRaises(NoSuchObject, self.backend.lookup, key)
