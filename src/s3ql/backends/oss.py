@@ -697,8 +697,8 @@ class ObjectW(object):
         print("close.self: %s" % self)
         print("close.self.md5: %" % self.md5)
         print("close.self.md5.hexdigest: %" % self.md5.hexdigest())
-        if etag != self.md5.hexdigest():
-#         if etag is None or etag == "":
+#         if etag != self.md5.hexdigest():
+        if etag is None or etag == "":
             log.warn('ObjectW(%s).close(): MD5 etag (%s)', self.key, etag)
 #            log.warn('ObjectW(%s).close(): MD5 mismatch (%s vs %s)', self.key, etag, self.md5.hexdigest)
             try:
