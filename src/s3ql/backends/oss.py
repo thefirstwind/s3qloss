@@ -693,10 +693,10 @@ class ObjectW(object):
         etag = resp.getheader('ETag').strip('"')
         assert resp.length == 0
 
-        print("close.etag : %s" % etag)
-        print("close.self: %s" % self)
-        print("close.self.md5: %" % self.md5)
-        print("close.self.md5.hexdigest: %" % self.md5.hexdigest())
+#         print("close.etag : %s" % etag)
+#         print("close.self: %s" % self)
+#         print("close.self.md5: %" % self.md5)
+#         print("close.self.md5.hexdigest: %" % self.md5.hexdigest())
 #         if etag != self.md5.hexdigest():
         if etag is None or etag == "":
             log.warn('ObjectW(%s).close(): MD5 etag (%s)', self.key, etag)
