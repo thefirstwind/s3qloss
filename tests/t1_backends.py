@@ -93,20 +93,20 @@ class BackendTestsMixin(object):
 #         self.backend[key] = value
 #         time.sleep(self.delay)
 #         self.assertTrue(key in self.backend)
-     
-    # Test OK
-    def test_delete(self):
-        key = self.newname()
-        value = self.newname()
-        self.backend[key] = value
-        time.sleep(self.delay)
-     
-        self.assertTrue(key in self.backend)
-        del self.backend[key]
-        time.sleep(self.delay)
-        self.assertFalse(key in self.backend)
-     
-    
+#      
+#     # Test OK
+#     def test_delete(self):
+#         key = self.newname()
+#         value = self.newname()
+#         self.backend[key] = value
+#         time.sleep(self.delay)
+#      
+#         self.assertTrue(key in self.backend)
+#         del self.backend[key]
+#         time.sleep(self.delay)
+#         self.assertFalse(key in self.backend)
+#      
+#     
 #     def test_clear(self):
 #         key1 = self.newname()
 #         key2 = self.newname()
@@ -147,7 +147,8 @@ class BackendTestsMixin(object):
 #       
 #         time.sleep(self.delay)
 #         self.assertEquals(self.backend[key2], value)
-      
+    
+    # Test NG
     def test_rename(self):
      
         key1 = self.newname()
