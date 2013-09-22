@@ -26,42 +26,42 @@ class BackendTestsMixin(object):
         #return "s3ql_=/_%d" % self.name_cnt
         return "s3ql_t/_%d" % self.name_cnt
 
-#    #Test OK
-#     def test_write(self):
-#          
-#         print(">>>>test_write:No1")
-#         key = self.newname()
-#         print("key: %s" % key)
-#          
-#         print(">>>>test_write:No2")
-#         value = self.newname()
-#         print("value: %s" % value)
-#         metadata = { 'jimmy': 'jups@42' }
-#     
-#         print(">>>>test_write:No3")
-#         self.assertRaises(NoSuchObject, self.backend.lookup, key)
-#         print(">>>>test_write:No4")
-#         self.assertRaises(NoSuchObject, self.backend.fetch, key)
-#     
-#         print(">>>>test_write:No5")
-#         with self.backend.open_write(key, metadata) as fh:
-#             fh.write(value)
-#     
-#         time.sleep(self.delay)
-#          
-#         print(">>>>test_write:No6")
-#         with self.backend.open_read(key) as fh:
-#             value2 = fh.read()
-#          
-#         print(">>>>test_write:No7")
-#         self.assertEquals(value, value2)
-#         print(">>>>test_write:No8")
-#         self.assertEquals(metadata, fh.metadata)
-#         print(">>>>test_write:No9")
-#         self.assertEquals(self.backend[key], value)
-#         print(">>>>test_write:No10")
-#         self.assertEquals(self.backend.lookup(key), metadata)
-#  
+    #Test OK
+     def test_write(self):
+          
+         print(">>>>test_write:No1")
+         key = self.newname()
+         print("key: %s" % key)
+          
+         print(">>>>test_write:No2")
+         value = self.newname()
+         print("value: %s" % value)
+         metadata = { 'jimmy': 'jups@42' }
+     
+         print(">>>>test_write:No3")
+         self.assertRaises(NoSuchObject, self.backend.lookup, key)
+         print(">>>>test_write:No4")
+         self.assertRaises(NoSuchObject, self.backend.fetch, key)
+     
+         print(">>>>test_write:No5")
+         with self.backend.open_write(key, metadata) as fh:
+             fh.write(value)
+     
+         time.sleep(self.delay)
+          
+         print(">>>>test_write:No6")
+         with self.backend.open_read(key) as fh:
+             value2 = fh.read()
+          
+         print(">>>>test_write:No7")
+         self.assertEquals(value, value2)
+         print(">>>>test_write:No8")
+         self.assertEquals(metadata, fh.metadata)
+         print(">>>>test_write:No9")
+         self.assertEquals(self.backend[key], value)
+         print(">>>>test_write:No10")
+         self.assertEquals(self.backend.lookup(key), metadata)
+  
     # Test OK
     def test_setitem(self):
         key = self.newname()
@@ -84,69 +84,69 @@ class BackendTestsMixin(object):
         self.assertEquals(fh.metadata, dict())
         self.assertEquals(self.backend.lookup(key), dict())
     
-#     # Test NG
-#     def test_contains(self):
-#         key = self.newname()
-#         value = self.newname()
-#      
-#         self.assertFalse(key in self.backend)
-#         self.backend[key] = value
-#         time.sleep(self.delay)
-#         self.assertTrue(key in self.backend)
-#      
-#     # Test OK
-#     def test_delete(self):
-#         key = self.newname()
-#         value = self.newname()
-#         self.backend[key] = value
-#         time.sleep(self.delay)
-#      
-#         self.assertTrue(key in self.backend)
-#         del self.backend[key]
-#         time.sleep(self.delay)
-#         self.assertFalse(key in self.backend)
-#      
-#     
-#     def test_clear(self):
-#         key1 = self.newname()
-#         key2 = self.newname()
-#         self.backend[key1] = self.newname()
-#         self.backend[key2] = self.newname()
-#      
-#         time.sleep(self.delay)
-#         self.assertEquals(len(list(self.backend)), 2)
-#         self.backend.clear()
-#         time.sleep(5*self.delay)
-#         self.assertTrue(key1 not in self.backend)
-#         self.assertTrue(key2 not in self.backend)
-#         self.assertEquals(len(list(self.backend)), 0)
-# 
-#     # Test NG
-#     def test_list(self):
-#       
-#         keys = [ self.newname() for dummy in range(12) ]
-#         values = [ self.newname() for dummy in range(12) ]
-#         for i in range(12):
-#             self.backend[keys[i]] = values[i]
-#       
-#         time.sleep(self.delay)
-#         self.assertEquals(sorted(self.backend.list()), sorted(keys))
-    
-#     # Test NG
-#     def test_copy(self):
-#       
-#         key1 = self.newname()
-#         key2 = self.newname()
-#         value = self.newname()
-#         self.assertRaises(NoSuchObject, self.backend.lookup, key1)
-#         self.assertRaises(NoSuchObject, self.backend.lookup, key2)
-#       
-#         self.backend.store(key1, value)
-#         time.sleep(self.delay)
-#         self.backend.copy(key1, key2)
-#       
-#         time.sleep(self.delay)
-#         self.assertEquals(self.backend[key2], value)
+    # Test NG
+    def test_contains(self):
+        key = self.newname()
+        value = self.newname()
+      
+        self.assertFalse(key in self.backend)
+        self.backend[key] = value
+        time.sleep(self.delay)
+        self.assertTrue(key in self.backend)
+      
+    # Test OK
+    def test_delete(self):
+        key = self.newname()
+        value = self.newname()
+        self.backend[key] = value
+        time.sleep(self.delay)
+      
+        self.assertTrue(key in self.backend)
+        del self.backend[key]
+        time.sleep(self.delay)
+        self.assertFalse(key in self.backend)
+      
+     
+    def test_clear(self):
+        key1 = self.newname()
+        key2 = self.newname()
+        self.backend[key1] = self.newname()
+        self.backend[key2] = self.newname()
+      
+        time.sleep(self.delay)
+        self.assertEquals(len(list(self.backend)), 2)
+        self.backend.clear()
+        time.sleep(5*self.delay)
+        self.assertTrue(key1 not in self.backend)
+        self.assertTrue(key2 not in self.backend)
+        self.assertEquals(len(list(self.backend)), 0)
+ 
+    # Test NG
+    def test_list(self):
+       
+        keys = [ self.newname() for dummy in range(12) ]
+        values = [ self.newname() for dummy in range(12) ]
+        for i in range(12):
+            self.backend[keys[i]] = values[i]
+       
+        time.sleep(self.delay)
+        self.assertEquals(sorted(self.backend.list()), sorted(keys))
+     
+    # Test NG
+    def test_copy(self):
+       
+        key1 = self.newname()
+        key2 = self.newname()
+        value = self.newname()
+        self.assertRaises(NoSuchObject, self.backend.lookup, key1)
+        self.assertRaises(NoSuchObject, self.backend.lookup, key2)
+       
+        self.backend.store(key1, value)
+        time.sleep(self.delay)
+        self.backend.copy(key1, key2)
+       
+        time.sleep(self.delay)
+        self.assertEquals(self.backend[key2], value)
     
     # Test NG
     def test_rename(self):
