@@ -23,8 +23,8 @@ class BackendTestsMixin(object):
     def newname(self):
         self.name_cnt += 1
         # Include special characters
-        return "s3ql_=/_%d" % self.name_cnt
-        #return "s3ql_t/_%d" % self.name_cnt
+        #return "s3ql_=/_%d" % self.name_cnt
+        return "s3ql_t/_%d" % self.name_cnt
 
     def test_write(self):
         
