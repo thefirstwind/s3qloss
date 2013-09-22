@@ -73,7 +73,7 @@ class Backend(s3c.Backend):
 
         log.debug('delete(%s)', key)
         try:
-            print("method:delete._do_request")
+            print("method:delete_do_request")
             resp = self._do_request('DELETE', '/%s%s' % (self.prefix, key))
             assert resp.length == 0
         except NoSuchKeyError:
@@ -138,7 +138,7 @@ class Backend(s3c.Backend):
             log.debug('list(%s): requesting with marker=%s', prefix, marker)
  
             keys_remaining = None
-            print("method: _list._do_request")
+            print("method: _list_do_request")
             resp = self._do_request('GET', '/', query_string={ 'prefix': prefix,
                                                               'marker': marker,
                                                               'max-keys': 1000 })
@@ -201,7 +201,7 @@ class Backend(s3c.Backend):
         log.debug('lookup(%s)', key)
 
         try:
-            print("method: lookup._do_request")
+            print("method: lookup_do_request")
             resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
             assert resp.length == 0
         except HTTPError as exc:
@@ -219,7 +219,7 @@ class Backend(s3c.Backend):
         log.debug('get_size(%s)', key)
 
         try:
-            print("method:get_size._do_request")
+            print("method:get_size_do_request")
             resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
             assert resp.length == 0
         except HTTPError as exc:
@@ -244,7 +244,7 @@ class Backend(s3c.Backend):
         """
  
         try:
-            print("method:open_read._do_request")
+            print("method:open_read_do_request")
             resp = self._do_request('GET', '/%s%s' % (self.prefix, key))
         except NoSuchKeyError:
             raise NoSuchObject(key)
@@ -288,7 +288,7 @@ class Backend(s3c.Backend):
         log.debug('copy(%s, %s): start', src, dest)
 
         try:
-            print("method: copy._do_request")
+            print("method: copy_do_request")
             resp = self._do_request('PUT', '/%s%s' % (self.prefix, dest),
                        headers={ 'x-oss-copy-source': '/%s/%s%s' % (self.bucket_name, self.prefix, src)})
             # Discard response body
@@ -563,7 +563,7 @@ class Backend(s3c.Backend):
         log.debug('lookup(%s)', key)
 
         try:
-            print("method: extractmeta._do_request")
+            print("method: extractmeta_do_request")
             resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
             assert resp.length == 0
         except HTTPError as exc:
@@ -687,7 +687,7 @@ class ObjectW(object):
         self.headers['Content-Length'] = self.obj_size
 
         self.fh.seek(0)
-        print("method: close._do_request")
+        print("method: close_do_request")
         resp = self._do_request('PUT', '/%s%s' % (self.backend.prefix, self.key),
                                        headers=self.headers, body=self.fh)
         etag = resp.getheader('ETag').strip('"')
