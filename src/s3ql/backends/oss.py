@@ -151,7 +151,7 @@ class Backend(s3c.Backend):
  
 #             log.debug("root.tag %",root.tag)
             
-#             namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
+            namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
 
 #             log.debug("Prefix: %s" % root.findtext('Prefix'))
 #             log.debug("Marker: %s" % root.findtext('Marker'))
@@ -163,8 +163,8 @@ class Backend(s3c.Backend):
 #             for (event, el) in itree:
 #                 print("root.contents: %s : %s" % (el.tag,el.text))
             
-#             if namespace != self.namespace:
-#                 raise RuntimeError('Unsupported namespace: %s' % namespace)
+            if namespace != self.namespace:
+                raise RuntimeError('Unsupported namespace: %s' % namespace)
  
             try:
                 for (event, el) in itree:
@@ -191,8 +191,8 @@ class Backend(s3c.Backend):
                 break
 
             if keys_remaining is None:
-                break
-#                 raise RuntimeError('Could not parse body')
+#                 break
+                raise RuntimeError('Could not parse body')
 
     @retry
     def lookup(self, key):
