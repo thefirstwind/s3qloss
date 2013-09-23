@@ -140,6 +140,7 @@ class BackendTestsMixin(object):
         key2 = self.newname()
         value = self.newname()
         
+        print(">>>>> self.backend.lookup : %s" % self.backend.lookup)
         print(">>>>test_copy No1 .key1: %s" % key1)
         self.assertRaises(NoSuchObject, self.backend.lookup, key1)
         

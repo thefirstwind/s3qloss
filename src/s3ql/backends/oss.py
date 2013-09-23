@@ -433,6 +433,7 @@ class Backend(s3c.Backend):
         # Lowercase headers
         keys = list(headers.iterkeys())
         for key in keys:
+            print("_send_request key : %s" % key)
             key_l = key.lower()
             if key_l == key:
                 continue
