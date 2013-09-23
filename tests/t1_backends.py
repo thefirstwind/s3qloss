@@ -140,13 +140,13 @@ class BackendTestsMixin(object):
         key2 = self.newname()
         value = self.newname()
         
-        print("test_copy.key1: %s" % key1)
+        print(">>>>test_copy No1 .key1: %s" % key1)
         self.assertRaises(NoSuchObject, self.backend.lookup, key1)
         
-        print("test_copy.key2: %s" % key2)
+        print(">>>>test_copy No2 .key2: %s" % key2)
         self.assertRaises(NoSuchObject, self.backend.lookup, key2)
        
-        print("test_copy.value: %s" % value)
+        print(">>>>test_copy No3 .value: %s" % value)
         self.backend.store(key1, value)
         time.sleep(self.delay)
         self.backend.copy(key1, key2)
