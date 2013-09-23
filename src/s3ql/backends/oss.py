@@ -527,11 +527,14 @@ class Backend(s3c.Backend):
         
         log.debug("path:%s" % path)
         log.debug("method:%s" % method)
+        print("path:%s" % path)
+        print("method:%s" % method)
         
         try:
             if body is None or not self.use_expect_100c or isinstance(body, bytes):
                 # Easy case, small or no payload
                 log.debug('_send_request(): processing request for %s', path)
+                print('_send_request(): processing request for %s', path)
                 self.conn.request(method, path, body, headers)
                 return self.conn.getresponse()
 
@@ -544,6 +547,7 @@ class Backend(s3c.Backend):
             self.conn.endheaders(None)
 
             log.debug('_send_request(): Waiting for 100-cont..')
+            print('_send_request(): Waiting for 100-cont..')
 
             # Sneak in our own response class as instance variable,
             # so that it knows about the body that still needs to
@@ -559,6 +563,7 @@ class Backend(s3c.Backend):
             
         except:
             # We probably can't use the connection anymore
+            print("self.conn.close")
             self.conn.close()
             raise
     
