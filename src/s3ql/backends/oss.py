@@ -324,7 +324,9 @@ class Backend(s3c.Backend):
             print("resp : %s" % resp)
             log.debug("resp:%s" % resp.getheaders())
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
-
+            
+            print("resp.status : %s" % resp.status)
+            print("new_url: %s" % resp.getheader('Location'))
             if (resp.status < 300 or resp.status > 399 ):
                 break
 
@@ -549,7 +551,6 @@ class Backend(s3c.Backend):
             self.conn.endheaders(None)
 
             log.debug('_send_request(): Waiting for 100-cont..')
-            print('_send_request(): Waiting for 100-cont..')
 
             # Sneak in our own response class as instance variable,
             # so that it knows about the body that still needs to
