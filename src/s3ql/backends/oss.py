@@ -535,7 +535,8 @@ class Backend(s3c.Backend):
             if body is None or not self.use_expect_100c or isinstance(body, bytes):
                 # Easy case, small or no payload
                 log.debug('_send_request(): processing request for %s', path)
-                print('_send_request(): processing request for %s', path)
+                print('_send_request(): processing request for %s' % path)
+                print('_send_request(): body %s' % body)
                 self.conn.request(method, path, body, headers)
                 return self.conn.getresponse()
 
