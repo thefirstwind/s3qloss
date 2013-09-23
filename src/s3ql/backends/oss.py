@@ -202,9 +202,12 @@ class Backend(s3c.Backend):
 
         try:
             print("method: lookup._do_request")
+            print("self.prefix: %s" % self.prefix)
+            print("key: %s" % key)
             resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
             assert resp.length == 0
         except HTTPError as exc:
+            print("lookup except: NoSuchObject")
             if exc.status == 404:
                 raise NoSuchObject(key)
             else:
@@ -315,8 +318,10 @@ class Backend(s3c.Backend):
 
         redirect_count = 0
         while True:
-                
+            
+            print("_do_request.(while true)")
             resp = self._send_request(method, path, headers, subres, query_string, body)
+            print("resp : %s" % resp)
             log.debug("resp:%s" % resp.getheaders())
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
 
@@ -325,10 +330,11 @@ class Backend(s3c.Backend):
 
             # Assume redirect
             new_url = resp.getheader('Location')
+            print("new_url: %s" % new_url)
             if new_url is None:
                 break
             log.info('_do_request(): redirected to %s', new_url)
-                        
+            
             redirect_count += 1
             if redirect_count > 10:
                 raise RuntimeError('Too many chained redirections')
