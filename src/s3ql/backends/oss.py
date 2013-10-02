@@ -7,10 +7,8 @@ This program can be distributed under the terms of the GNU GPLv3.
 '''
 
 from __future__ import division, print_function, absolute_import
-from . import s3c
-from .common import NoSuchObject, retry
-from .s3c import HTTPError,NoSuchKeyError, XML_CONTENT_RE
-from .s3c import HTTPResponse,BadDigestError, get_S3Error
+from .common import AbstractBackend, NoSuchObject, retry, AuthorizationError, http_connection,\
+    AuthenticationError, DanglingStorageURLError
 from ..common import BUFSIZE,QuietError
 import logging
 import base64
@@ -25,15 +23,23 @@ import xml.etree.cElementTree as ElementTree
 import urllib
 from urlparse import urlsplit
 import httplib
+from httplib import _MAXLINE, CONTINUE, LineTooLong
 from xml.etree.ElementTree import ParseError
+from s3ql.backends.common import is_temp_network_error
 
 
 # Pylint goes berserk with false positives
 #pylint: disable=E1002,E1101,W0201
 
+C_DAY_NAMES = [ 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun' ]
+C_MONTH_NAMES = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ]
+
+XML_CONTENT_RE = re.compile(r'^(?:application|text)/xml(?:;|$)', re.IGNORECASE)
+
 log = logging.getLogger("backends.oss")
 
-class Backend(s3c.Backend):
+#class Backend(s3c.Backend):
+class Backend(AbstractBackend):
     """A backend to stored data in Google Storage
     
     This class uses standard HTTP connections to connect to GS.
@@ -45,28 +51,88 @@ class Backend(s3c.Backend):
     use_expect_100c = True
     
     def __init__(self, storage_url, oss_key, oss_secret, use_ssl):
-        super(Backend, self).__init__(storage_url, oss_key, oss_secret, use_ssl)
+#        super(Backend, self).__init__(storage_url, oss_key, oss_secret, use_ssl)
+        super(Backend, self).__init__()
         
-#         self.namespace = 'http://doc.oss.aliyuncs.com'
+        (host, port, bucket_name, prefix) = self._parse_storage_url(storage_url, use_ssl)
+
+        self.bucket_name = bucket_name
+        self.prefix = prefix
+        self.hostname = host
+        self.port = port
+        self.use_ssl = use_ssl
+        self.conn = self._get_conn()
+
+        self.password = oss_secret
+        self.login = oss_key
+#        self.namespace = 'http://s3.amazonaws.com/doc/2006-03-01/'
+#        self.namespace = 'http://doc.oss.aliyuncs.com'
+        self.namespace = ''
 
 
     @staticmethod
     def _parse_storage_url(storage_url, use_ssl):
         hit = re.match(r'^oss://([^/]+)(?:/(.*))?$', storage_url)
+        # print("storage_url:%s" % storage_url)
+#        hit =  re.match(r'^[a-zA-Z0-9]+://'     # Backend
+#                        r'([^/:]+)'             # Hostname
+#                        r'(?::([0-9]+))?'       # Port 
+#                        r'/([^/]+)'             # Bucketname
+#                        r'(?:/(.*))?$',         # Prefix
+#                        storage_url)
         if not hit:
             raise QuietError('Invalid storage URL')
 
         bucket_name = hit.group(1)
         #hostname = '%s.oss-internal.aliyuncs.com' % bucket_name
-        hostname = '%s.oss-internal.aliyuncs.com' % bucket_name
+        hostname = '%s.oss.aliyuncs.com' % bucket_name
 
         prefix = hit.group(2) or ''
         port = 443 if use_ssl else 80
-        return (hostname, port, bucket_name, prefix)        
+        return (hostname, port, bucket_name, prefix)
 
-    def __str__(self):
-        return 'oss://%s/%s' % (self.bucket_name, self.prefix)
-    
+#        hostname = hit.group(1)
+#        if hit.group(2):
+#          port = int(hit.group(2))
+#        elif use_ssl:
+#          port = 443
+#        else:
+#          port = 80
+#        bucketname = hit.group(3)
+#        prefix = hit.group(4) or ''
+
+#        return (hostname, port, bucketname, prefix)
+
+#    def __str__(self):
+#        return 'oss://%s/%s' % (self.bucket_name, self.prefix)
+
+    def _get_conn(self):
+        '''Return connection to server'''
+        return http_connection(self.hostname, self.port, self.use_ssl)
+
+    def is_temp_failure(self, exc): #IGNORE:W0613
+        '''Return true if exc indicates a temporary error
+
+        Return true if the given exception indicates a temporary problem. Most instance methods
+        automatically retry the request in this case, so the caller does not need to worry about
+        temporary failures.
+
+        However, in same cases (e.g. when reading or writing an object), the request cannot
+        automatically be retried. In these case this method can be used to check for temporary
+        problems and so that the request can be manually restarted if applicable.
+        '''
+        if isinstance(exc, (InternalError, BadDigestError, IncompleteBodyError, 
+                            RequestTimeoutError, OperationAbortedError, SlowDownError, 
+                            RequestTimeTooSkewedError)):
+            return True
+        elif is_temp_network_error(exc):
+            return True
+
+        elif isinstance(exc, HTTPError) and exc.status >= 500 and exc.status <= 599:
+            return True
+
+        return False
+
     @retry
     def delete(self, key, force=False):
         '''Delete the specified object'''
@@ -111,10 +177,10 @@ class Backend(s3c.Backend):
 
                 log.info('Encountered %s exception (%s), retrying call to s3c.Backend.list()',
                           type(exc).__name__, exc)
-                
+
                 if hasattr(exc, 'retry_after') and exc.retry_after:
                     interval = exc.retry_after
-                                    
+
                 time.sleep(interval)
                 waited += interval
                 interval = min(5*60, 2*interval)
@@ -133,66 +199,72 @@ class Backend(s3c.Backend):
         keys_remaining = True
         marker = start
         prefix = self.prefix + prefix
- 
+
         while keys_remaining:
             log.debug('list(%s): requesting with marker=%s', prefix, marker)
- 
+
             keys_remaining = None
             print("method: _list._do_request")
+            print("method: _list.prefix(%s)" % prefix)
+#kei
             resp = self._do_request('GET', '/', query_string={ 'prefix': prefix,
                                                               'marker': marker,
                                                               'max-keys': 1000 })
- 
+
+#            print("\t[resp] %s" % resp.read())
             if not XML_CONTENT_RE.match(resp.getheader('Content-Type')):
                 raise RuntimeError('unexpected content type: %s' % resp.getheader('Content-Type'))
- 
+
             itree = iter(ElementTree.iterparse(resp, events=("start", "end")))
             (event, root) = itree.next()
- 
-#             log.debug("root.tag %",root.tag)
-            
-#             namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
 
-#             log.debug("Prefix: %s" % root.findtext('Prefix'))
-#             log.debug("Marker: %s" % root.findtext('Marker'))
-#             log.debug("MaxKeys: %s" % root.findtext('MaxKeys'))
-#             log.debug("Delimiter: %s" % root.findtext('Delimiter'))
-#             log.debug("IsTruncated: %s" % root.findtext('IsTruncated'))
-#             print("self.namespace: %s " % self.namespace)
-#             print("namespace: %s" % namespace)
-#             for (event, el) in itree:
-#                 print("root.contents: %s : %s" % (el.tag,el.text))
-            
-#             if namespace != self.namespace:
+#            log.debug("root.tag %",root.tag)
+
+#            namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
+
+            '''
+            log.debug("Prefix: %s" % root.findtext('Prefix'))
+            log.debug("Marker: %s" % root.findtext('Marker'))
+            log.debug("MaxKeys: %s" % root.findtext('MaxKeys'))
+            log.debug("Delimiter: %s" % root.findtext('Delimiter'))
+            log.debug("IsTruncated: %s" % root.findtext('IsTruncated'))
+            print("\t[process]self.namespace: %s " % self.namespace)
+            print("\t[process]namespace %s" % namespace)
+            for (event, el) in itree:
+                print("\t[process]root.contents: %s : %s : %s" % (el.tag,el.text,el.attrib))
+            '''
+#            if namespace != self.namespace:
 #                 raise RuntimeError('Unsupported namespace: %s' % namespace)
  
             try:
                 for (event, el) in itree:
                     if event != 'end':
                         continue
-                    
+
                     if el.tag == 'ListBucketResult':
                         log.debug("root.tag %", el.findtext('ListBucketResult'))
 
                     if el.tag == '{%s}IsTruncated' % self.namespace:
                         keys_remaining = (el.text == 'true')
- 
+
                     elif el.tag == '{%s}Contents' % self.namespace:
                         marker = el.findtext('{%s}Key' % self.namespace)
                         yield marker[len(self.prefix):]
                         root.clear()
- 
+
             except GeneratorExit:
                 # Need to read rest of response
                 while True:
                     buf = resp.read(BUFSIZE)
+                    # print("\t[process]buf(%s)" % buf)
                     if buf == '':
                         break
                 break
 
+            # print("\t[process]keys_remaining(%s)" % keys_remaining)
             if keys_remaining is None:
-                break
-#                 raise RuntimeError('Could not parse body')
+#                break
+                raise RuntimeError('Could not parse body')
 
     @retry
     def lookup(self, key):
@@ -240,18 +312,18 @@ class Backend(s3c.Backend):
     @retry
     def open_read(self, key):
         """Open object for reading
- 
+
         Return a file-like object. Data can be read using the `read` method. metadata is stored in
         its *metadata* attribute and can be modified by the caller at will. The object must be
         closed explicitly.
         """
- 
+
         try:
             print("method:open_read._do_request")
             resp = self._do_request('GET', '/%s%s' % (self.prefix, key))
         except NoSuchKeyError:
             raise NoSuchObject(key)
- 
+
         return ObjectR(key, resp, self, extractmeta(resp))
 
     def open_write(self, key, metadata=None, is_compressed=False):
@@ -261,10 +333,10 @@ class Backend(s3c.Backend):
         like object. The object must be closed explicitly. After closing, the *get_obj_size* may be
         used to retrieve the size of the stored object (which may differ from the size of the
         written data).
-        
+
         The *is_compressed* parameter indicates that the caller is going to write compressed data,
         and may be used to avoid recompression by the backend.
-                        
+
         Since Amazon S3 does not support chunked uploads, the entire data will
         be buffered in memory before upload.
         """
@@ -283,7 +355,7 @@ class Backend(s3c.Backend):
     @retry
     def copy(self, src, dest):
         """Copy data stored under key `src` to key `dest`
-        
+
         If `dest` already exists, it will be overwritten. The copying is done on
         the remote side.
         """
@@ -318,29 +390,39 @@ class Backend(s3c.Backend):
 
         redirect_count = 0
         while True:
-            
+
+            '''
             print("_do_request.(while true)")
+            print("\t[process] method(%s)" % method)
+            print("\t[process] path(%s)" % path)
+            print("\t[process] headers(%s)" % headers)
+            print("\t[process] subres(%s)" % subres)
+            print("\t[process] query_string(%s)" % query_string)
+            print("\t[process] body(%s)" % body)
+            '''
+
             resp = self._send_request(method, path, headers, subres, query_string, body)
-            print("resp : %s" % resp)
+            # print("\t[process] resp : %s" % resp)
             log.debug("resp:%s" % resp.getheaders())
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
-            
-            print("resp.status : %s" % resp.status)
-            print("new_url: %s" % resp.getheader('Location'))
+
+            # print("\t[process] resp.status : %s" % resp.status)
+            # print("\t[process] new_url: %s" % resp.getheader('Location'))
             if (resp.status < 300 or resp.status > 399 ):
                 break
 
             # Assume redirect
             new_url = resp.getheader('Location')
+            print("resp: %s" % resp)
             print("new_url: %s" % new_url)
             if new_url is None:
                 break
             log.info('_do_request(): redirected to %s', new_url)
-            
+
             redirect_count += 1
             if redirect_count > 10:
                 raise RuntimeError('Too many chained redirections')
-    
+
             # Pylint can't infer SplitResult Types
             #pylint: disable=E1103
             o = urlsplit(new_url)
@@ -355,12 +437,13 @@ class Backend(s3c.Backend):
                 self.conn = self._get_conn()
             else:
                 raise RuntimeError('Redirect to different path on same host')
-            
+
             if body and not isinstance(body, bytes):
                 body.seek(0)
 
             # Read and discard body
             log.debug('Response body: %s', resp.read())
+#            print('\tResponse body: (%s)' % resp.read())
 
         # We need to call read() at least once for httplib to consider this
         # request finished, even if there is no response body.
@@ -377,21 +460,23 @@ class Backend(s3c.Backend):
             raise HTTPError(resp.status, resp.reason)
 
         content_type = resp.getheader('Content-Type')
-        
+
         if not content_type or not XML_CONTENT_RE.match(content_type):
             raise HTTPError(resp.status, resp.reason, resp.getheaders(), resp.read())
 
-#TODO 2013/23:13 
         tree = ElementTree.parse(resp).getroot()
-#         log.debug("#Start------------------------------")
-#         log.debug("Code :%s" % tree.findtext('Code'))
-#         log.debug("Message :%s" % tree.findtext('Message'))
-#         log.debug("HostId :%s" % tree.findtext('HostId'))
-#         log.debug("RequestId :%s" % tree.findtext('RequestId'))
-#         log.debug("OSSAccessKeyId :%s" % tree.findtext('OSSAccessKeyId'))
-#         log.debug("SignatureProvided :%s" % tree.findtext('SignatureProvided'))
-#         log.debug("StringToSign :%s" % tree.findtext('StringToSign'))
-#         log.debug("#End------------------------------")
+        '''
+        log.debug("#Start------------------------------")
+        log.debug("Code :%s" % tree.findtext('Code'))
+        log.debug("Message :%s" % tree.findtext('Message'))
+        log.debug("HostId :%s" % tree.findtext('HostId'))
+        log.debug("RequestId :%s" % tree.findtext('RequestId'))
+        log.debug("OSSAccessKeyId :%s" % tree.findtext('OSSAccessKeyId'))
+        log.debug("SignatureProvided :%s" % tree.findtext('SignatureProvided'))
+        log.debug("StringToSign :%s" % tree.findtext('StringToSign'))
+        log.debug("#End------------------------------")
+        '''
+        '''
         print("#Start------------------------------")
         print("Code :%s" % tree.findtext('Code'))
         print("Message :%s" % tree.findtext('Message'))
@@ -401,13 +486,14 @@ class Backend(s3c.Backend):
         print("SignatureProvided :%s" % tree.findtext('SignatureProvided'))
         print("StringToSign :%s" % tree.findtext('StringToSign'))
         print("#End------------------------------")
+        '''
 
         raise get_S3Error(tree.findtext('Code'), tree.findtext('Message'))
 
 
     def clear(self):
         """Delete all objects in backend
-        
+
         Note that this method may not be able to see (and therefore also not
         delete) recently uploaded objects.
         """
@@ -423,19 +509,23 @@ class Backend(s3c.Backend):
             # Ignore missing objects when clearing bucket
             self.delete(s3key, True)
 
+    def __str__(self):
+        return 'oss://%s/%s/%s' % (self.hostname, self.bucket_name, self.prefix)
+
     def _send_request(self, method, path, headers, subres=None, query_string=None, body=None):
         '''Add authentication and send request
-        
+
         Note that *headers* is modified in-place. Returns the response object.
         '''
 
         # See http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
 #-------------------------------------------------------------------------------
         log.debug("_send_request.path %s" % path)
+        # print("[method]_send_request.path %s" % path)
         # Lowercase headers
         keys = list(headers.iterkeys())
         for key in keys:
-            print("_send_request key : %s" % key)
+            # print("\t[process]_send_request key : %s" % key)
             key_l = key.lower()
             if key_l == key:
                 continue
@@ -443,18 +533,23 @@ class Backend(s3c.Backend):
             del headers[key]
 
         # Date, can't use strftime because it's locale dependent
-        
+
         params = dict()
-#         m_get_date = time.time()
-#         if query_string:
-#             m_get_date_str = str(int(m_get_date))
-#             m_get_date_expires_str = str(int(m_get_date_str) + 60)
-#             params['Date'] = m_get_date_expires_str
-#             params['Expires'] = m_get_date_expires_str
-#             params["OSSAccessKeyId"] = self.login
-#             headers['date'] = m_get_date_expires_str
-#         else:
-        headers['date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+#        m_get_date = time.mktime(time.localtime())
+        m_get_date = time.time()
+        # print("\t[process] m_get_date:%s" % m_get_date)
+        if query_string:
+            m_get_date_str = str(int(m_get_date))
+            m_get_date_expires_str = str(int(m_get_date_str) + 60*5)
+#            params['Date'] = m_get_date_expires_str
+            params['Expires'] = m_get_date_expires_str
+            params["OSSAccessKeyId"] = self.login
+            headers['date'] = m_get_date_expires_str
+        else:
+            headers['date'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+
+        # print("\t[process] (%s)" % headers['date'])
+        # print("\t[process]params(%s) " % params)
 
         '''
         [sign_str] 
@@ -479,37 +574,45 @@ class Backend(s3c.Backend):
         # Always include bucket name in path for signing
 #         sign_path = urllib.quote('/%s%s' % (self.bucket_name, path))
         sign_path = '/%s%s' % (self.bucket_name, path)
+#kei
+#        sign_path = '%s' % (path)
         log.debug("sign_path : %s" % sign_path)
         auth_strs.append(sign_path)
         if subres:
             auth_strs.append('?%s' % subres)
-            
+
 
         # False positive, hashlib *does* have sha1 member
         #pylint: disable=E1101
-        
+
         signature = base64.encodestring(hmac.new(self.password, ''.join(auth_strs), sha).digest()).strip()
 
-#         if query_string:
-#             params["Signature"] = signature
-#         else:
-        headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
-#         log.debug("auth_strs :%s" % auth_strs)
-#         for k in headers:
-#             log.debug("headers[%s] :%s" % (k,headers[k])) 
-#         log.debug("signature :%s" % signature) 
-#         log.debug("accessKey :%s" % self.password) 
-#         log.debug("sign_path :%s" % sign_path) 
-#         log.debug("<<<<<<<#end----------------")
-        print("auth_strs :%s" % auth_strs)
+        if query_string:
+            params["Signature"] = signature
+        else:
+            headers['Authorization'] = 'OSS %s:%s' % (self.login, signature)
+
+        '''
+        log.debug("auth_strs :%s" % auth_strs)
         for k in headers:
-            print("headers[%s] :%s" % (k,headers[k])) 
-        print("signature :%s" % signature) 
-        print("accessKey :%s" % self.password) 
-        print("sign_path :%s" % sign_path) 
-        print("<<<<<<<#end----------------")
-   
-        
+            log.debug("headers[%s] :%s" % (k,headers[k])) 
+        log.debug("signature :%s" % signature) 
+        log.debug("accessKey :%s" % self.password) 
+        log.debug("sign_path :%s" % sign_path) 
+        log.debug("<<<<<<<#end----------------")
+        '''
+        '''
+        print("\tstart----------------")
+        print("\tauth_strs :%s" % auth_strs)
+        for k in headers:
+            print("\theaders[%s] :%s" % (k,headers[k])) 
+        print("\tsignature :%s" % signature) 
+        print("\taccessKey :%s" % self.password) 
+        print("\tsign_path :%s" % sign_path) 
+        print("\tend----------------")
+        '''
+
+
 #-------------------------------------------------------------------------------
         # Construct full path
         if not self.hostname.startswith(self.bucket_name):
@@ -521,25 +624,30 @@ class Backend(s3c.Backend):
                 path += '?%s&%s' % (subres, s)
             else:
                 path += '?%s' % s
-#             p = urllib.urlencode(params, doseq=True)
-#             path += '&%s' % p 
+            p = urllib.urlencode(params, doseq=True)
+            path += '&%s' % p 
         elif subres:
             path += '?%s' % subres
-#             p = urllib.urlencode(params, doseq=True)
-#             path += '&%s' % p 
-        
+            p = urllib.urlencode(params, doseq=True)
+            path += '&%s' % p 
+
         log.debug("path:%s" % path)
         log.debug("method:%s" % method)
-        print("path:%s" % path)
-        print("method:%s" % method)
-        
+        # print("path:%s" % path)
+        # print("method:%s" % method)
+
         try:
             if body is None or not self.use_expect_100c or isinstance(body, bytes):
                 # Easy case, small or no payload
                 log.debug('_send_request(): processing request for %s', path)
-                print('_send_request(): processing request for %s' % path)
-                print('_send_request(): body %s' % body)
+                # print('_send_request(): processing request for %s' % path)
+                # print('_send_request(): body %s' % body)
                 self.conn.request(method, path, body, headers)
+#debug
+#                resp = self.conn.getresponse()
+#                new_url = resp.getheader('Location')
+#                print("[process] resp(%s)" % new_url)
+#debug
                 return self.conn.getresponse()
 
             # Potentially big message body, so we use 100-continue
@@ -563,10 +671,10 @@ class Backend(s3c.Backend):
             finally:
                 self.conn.response_class = native_response_class
             return resp
-            
+
         except:
             # We probably can't use the connection anymore
-            print("self.conn.close")
+            # print("self.conn.close")
             self.conn.close()
             raise
     
@@ -577,7 +685,7 @@ class Backend(s3c.Backend):
         log.debug('lookup(%s)', key)
 
         try:
-            print("method: extractmeta._do_request")
+            # print("method: extractmeta._do_request")
             resp = self._do_request('HEAD', '/%s%s' % (self.prefix, key))
             assert resp.length == 0
         except HTTPError as exc:
@@ -587,9 +695,82 @@ class Backend(s3c.Backend):
                 raise
 
         return extractmeta(resp)
-    
 
-                
+
+class HTTPResponse(httplib.HTTPResponse):
+      '''
+      This class provides a HTTP Response object that supports waiting for
+      "100 Continue" and then sending the request body.
+
+      The http.client.HTTPConnection module is almost impossible to extend,
+      because the __response and __state variables are mangled. Implementing
+      support for "100-Continue" doesn't fit into the existing state
+      transitions.  Therefore, it has been implemented in a custom
+      HTTPResponse class instead.
+
+      Even though HTTPConnection allows to define a custom HTTPResponse class, it
+      doesn't provide any means to pass extra information to the response
+      constructor. Therefore, we instantiate the response manually and save the
+      instance in the `response_class` attribute of the connection instance. We
+      turn the class variable holding the response class into an instance variable
+      holding the response instance. Only after the response instance has been
+      created, we call the connection's `getresponse` method. Since this method
+      doesn't know about the changed semantics of `response_class`, HTTPResponse
+      instances have to fake an instantiation by just returning itself when called.
+      '''
+
+      def __init__(self, sock, body):
+          self.sock = sock
+          self.body = body
+          self.__cached_status = None
+
+      def __call__(self, sock, *a, **kw):
+          '''Fake object instantiation'''
+
+          assert self.sock is sock
+
+          httplib.HTTPResponse.__init__(self, sock, *a, **kw)
+
+          return self
+
+      def _read_status(self):
+          if self.__cached_status is None:
+              self.__cached_status = httplib.HTTPResponse._read_status(self)
+
+          return self.__cached_status
+
+      def begin(self):
+          log.debug('Waiting for 100-continue...')
+
+          (version, status, reason) = self._read_status()
+          if status != CONTINUE:
+              # Oops, error. Let regular code take over
+              return httplib.HTTPResponse.begin(self)
+
+          # skip the header from the 100 response
+          while True:
+              skip = self.fp.readline(_MAXLINE + 1)
+              if len(skip) > _MAXLINE:
+                  raise LineTooLong("header line")
+              skip = skip.strip()
+              if not skip:
+                  break
+              log.debug('Got 100 continue header: %s', skip)
+
+          # Send body
+          if not hasattr(self.body, 'read'):
+              self.sock.sendall(self.body)
+          else:
+              while True:
+                  buf = self.body.read(BUFSIZE)
+                  if not buf:
+                      break
+                  self.sock.sendall(buf)
+
+          # *Now* read the actual response
+          self.__cached_status = None
+          return httplib.HTTPResponse.begin(self)
+
 class ObjectR(object):
     '''An S3 object open for reading'''
 
@@ -619,7 +800,7 @@ class ObjectR(object):
         if not buf and not self.md5_checked:
             etag = self.resp.getheader('ETag').strip('"')
             self.md5_checked = True
-            
+
             if not self.resp.isclosed():
                 # http://bugs.python.org/issue15633
                 ver = sys.version_info
@@ -635,14 +816,14 @@ class ObjectR(object):
                               self.resp._method, self.resp.chunked, size, self.resp.length,
                               self.resp.chunk_left, self.resp.status, self.resp.reason,
                               self.resp.version, self.resp.will_close)
-                                    
+
                 self.resp.close() 
-            
+
 #             if etag != self.md5.hexdigest():
 #                 log.warn('ObjectR(%s).close(): MD5 mismatch: %s vs %s', self.key, etag,
 #                          self.md5.hexdigest())
 #                 raise BadDigestError('BadDigest', 'ETag header does not agree with calculated MD5')
-            
+
             return buf
 
         self.md5.update(buf)
@@ -661,7 +842,7 @@ class ObjectR(object):
 
 class ObjectW(object):
     '''An S3 object open for writing
-    
+
     All data is first cached in memory, upload only starts when
     the close() method is called.
     '''
@@ -701,7 +882,7 @@ class ObjectW(object):
         self.headers['Content-Length'] = self.obj_size
 
         self.fh.seek(0)
-        print("method: close._do_request")
+        # print("method: close._do_request")
         resp = self.backend._do_request('PUT', '/%s%s' % (self.backend.prefix, self.key),
                                        headers=self.headers, body=self.fh)
         etag = resp.getheader('ETag').strip('"')
@@ -728,7 +909,22 @@ class ObjectW(object):
         if not self.closed:
             raise RuntimeError('Object must be closed first.')
         return self.obj_size
-    
+
+
+def get_S3Error(code, msg):
+    '''Instantiate most specific S3Error subclass'''
+
+    if code.endswith('Error'):
+        name = code
+    else:
+        name = code + 'Error'
+        class_ = globals().get(name, S3Error)
+
+    if not issubclass(class_, S3Error):
+        return S3Error(code, msg)
+
+    return class_(code, msg)
+
 def extractmeta(resp):
     '''Extract metadata from HTTP response object'''
 
@@ -746,3 +942,70 @@ def extractmeta(resp):
         meta[hit.group(1)] = val
 
     return meta
+
+class HTTPError(Exception):
+    '''
+    Represents an HTTP error returned by S3.
+    '''
+    def __init__(self, status, msg, headers=None, body=None):
+        super(HTTPError, self).__init__()
+        self.status = status
+        self.msg = msg
+        self.headers = headers
+        self.body = body
+        self.retry_after = None
+
+        if self.headers is not None:
+            self._set_retry_after()
+
+    def _set_retry_after(self):
+        '''Parse headers for Retry-After value'''
+
+        val = None
+        for (k, v) in self.headers:
+            if k.lower() == 'retry-after':
+                hit = re.match(r'^\s*([0-9]+)\s*$', v)
+                if hit:
+                    val = int(v)
+                else:
+                    date = parsedate_tz(v)
+                    if date is None:
+                        log.warn('Unable to parse header: %s: %s', k, v)
+                        continue
+                    val = mktime_tz(*date) - time.time()
+
+        if val is not None:
+            if val > 300 or val < 0:
+                log.warn('Ignoring invalid retry-after value of %.3f', val)
+            else:
+                self.retry_after = val
+
+    def __str__(self):
+        return '%d %s' % (self.status, self.msg)
+
+class S3Error(Exception):
+    '''
+    Represents an error returned by S3. For possible codes, see
+    http://docs.amazonwebservices.com/AmazonS3/latest/API/ErrorResponses.html
+    '''
+    def __init__(self, code, msg):
+        super(S3Error, self).__init__(msg)
+        self.code = code
+        self.msg = msg
+    def __str__(self):
+        return '%s: %s' % (self.code, self.msg)
+
+class NoSuchKeyError(S3Error): pass
+class AccessDeniedError(S3Error, AuthorizationError): pass
+class BadDigestError(S3Error): pass
+class IncompleteBodyError(S3Error): pass
+class InternalError(S3Error): pass
+class InvalidAccessKeyIdError(S3Error, AuthenticationError): pass
+class InvalidSecurityError(S3Error, AuthenticationError): pass
+class SignatureDoesNotMatchError(S3Error, AuthenticationError): pass
+class OperationAbortedError(S3Error): pass
+class RequestTimeoutError(S3Error): pass
+class TimeoutError(RequestTimeoutError): pass
+class SlowDownError(S3Error): pass
+class RequestTimeTooSkewedError(S3Error): pass
+class NoSuchBucketError(S3Error, DanglingStorageURLError): pass
