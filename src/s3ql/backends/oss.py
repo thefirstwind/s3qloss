@@ -156,22 +156,27 @@ class Backend(AbstractBackend):
         '''
 
         log.debug('list(%s): start', prefix)
+        print('[method]list(%s): start -----------------------------------', prefix)
 
         marker = ''
         waited = 0
         interval = 1 / 50
         iterator = self._list(prefix, marker)
+        print("[process] list.iterator : %s " % iterator)
         while True:
             try:
                 marker = iterator.next()
+                print("[method] list >[try] marker")
                 waited = 0
             except StopIteration:
+                print("[method] list >[exception] StopIteration")
                 break
             except Exception as exc:
+                print("[method] list >[exception] Exceiption")
                 if not self.is_temp_failure(exc):
                     raise
                 if waited > 60 * 60:
-                    log.error('list(): Timeout exceeded, re-raising %s exception', 
+                    log.error('list(): Timeout exceeded, re-raising %s exception',
                               type(exc).__name__)
                     raise
 
@@ -187,6 +192,7 @@ class Backend(AbstractBackend):
                 iterator = self._list(prefix, marker)
 
             else:
+                print("[method] list > [else]")
                 yield marker
 
     def _list(self, prefix='', start=''):
@@ -196,63 +202,98 @@ class Backend(AbstractBackend):
         does not retry on errors.
         '''
 
+        print('[method]_list(%s): start -----------------------------------', prefix)
         keys_remaining = True
         marker = start
         prefix = self.prefix + prefix
 
         while keys_remaining:
+
             log.debug('list(%s): requesting with marker=%s', prefix, marker)
+            # print("[process] _list(%s): requesting with marker = %s " % (self.prefix,prefix))
 
             keys_remaining = None
-            print("method: _list._do_request")
-            print("method: _list.prefix(%s)" % prefix)
-#kei
+#            print("method: _list._do_request")
+#            print("method: _list.prefix(%s)" % prefix)
             resp = self._do_request('GET', '/', query_string={ 'prefix': prefix,
-                                                              'marker': marker,
-                                                              'max-keys': 1000 })
+                                                               'marker': marker,
+                                                               'max-keys': 1000 })
 
-#            print("\t[resp] %s" % resp.read())
             if not XML_CONTENT_RE.match(resp.getheader('Content-Type')):
                 raise RuntimeError('unexpected content type: %s' % resp.getheader('Content-Type'))
 
+
+            print("\t[try]_list.try")
+#            print("\t[resp] %s" % resp.read())
+
             itree = iter(ElementTree.iterparse(resp, events=("start", "end")))
+
             (event, root) = itree.next()
-
-#            log.debug("root.tag %",root.tag)
-
-#            namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
+#            print("\t[root] %s" % root)
 
             '''
+            namespace = re.sub(r'^\{(.+)\}.+$', r'\1', root.tag)
+            print("\t[process]self.namespace: %s " % self.namespace)
+            print("\t[process]namespace %s" % namespace)
+            '''
+            '''
+            log.debug("root.tag %",root.tag)
             log.debug("Prefix: %s" % root.findtext('Prefix'))
             log.debug("Marker: %s" % root.findtext('Marker'))
             log.debug("MaxKeys: %s" % root.findtext('MaxKeys'))
             log.debug("Delimiter: %s" % root.findtext('Delimiter'))
             log.debug("IsTruncated: %s" % root.findtext('IsTruncated'))
-            print("\t[process]self.namespace: %s " % self.namespace)
-            print("\t[process]namespace %s" % namespace)
-            for (event, el) in itree:
-                print("\t[process]root.contents: %s : %s : %s" % (el.tag,el.text,el.attrib))
             '''
-#            if namespace != self.namespace:
-#                 raise RuntimeError('Unsupported namespace: %s' % namespace)
- 
+
+#                if namespace != self.namespace:
+#                     raise RuntimeError('Unsupported namespace: %s' % namespace)
             try:
+
+                if root.find('IsTruncated').text == 'true':
+                    keys_remaining = true
+
+                for contents in root.findall('Contents'):
+    #                print("[>>>>Contents<<<<] %s:%s" % (child.tag, child.text))
+                    print("[>>>>Contents<<<<] %s" % contents)
+                    for childInContents in contents:
+                        print("[childInContents] %s:%s " % (childInContents.tag,childInContents.text))
+                        if childInContents.tag == 'Key':
+                              marker = childInContents.text
+                              yield marker[len(self.prefix):]
+                              root.clear()
+    #            for (event, el) in itree:
+    #                print("\t\t[process] %s:%s" % (el.tag,el.text))
+
+                '''
                 for (event, el) in itree:
+
+
                     if event != 'end':
                         continue
 
-                    if el.tag == 'ListBucketResult':
-                        log.debug("root.tag %", el.findtext('ListBucketResult'))
+#                    print("\t\t[process] -----------")
+#                    print("\t\t[process]root.tag %s" % el.findtext('ListBucketResult'))
+#                    print("\t\t[process] %s:%s" % (el.tag,el.text))
+#                    print("\t\t[process] keys_remaining(%s)" % keys_remaining)
 
+#                    if el.tag == 'ListBucketResult':
+#                        log.debug("root.tag %s", el.findtext('ListBucketResult'))
+
+#                    print("\t[process]self.namespace:(%s)" % self.namespace)
                     if el.tag == '{%s}IsTruncated' % self.namespace:
+                        print("\t[process.IsTruncated]IsTruncated(%s)" % el.text)
                         keys_remaining = (el.text == 'true')
 
                     elif el.tag == '{%s}Contents' % self.namespace:
+                        print("\t[process.Contents] %s:%s" % (el.tag,el.text))
+                        print("\t[process]el.tag.key(%s)" % el.findtext('Key'))
                         marker = el.findtext('{%s}Key' % self.namespace)
                         yield marker[len(self.prefix):]
                         root.clear()
+                '''
 
             except GeneratorExit:
+                print("\t[exception] _list > GeneratorExit")
                 # Need to read rest of response
                 while True:
                     buf = resp.read(BUFSIZE)
@@ -261,10 +302,10 @@ class Backend(AbstractBackend):
                         break
                 break
 
-            # print("\t[process]keys_remaining(%s)" % keys_remaining)
+            print("\t[process] _list > keys_remaining(%s)" % keys_remaining)
             if keys_remaining is None:
-#                break
-                raise RuntimeError('Could not parse body')
+                continue
+#                raise RuntimeError('Could not parse body')
 
     @retry
     def lookup(self, key):
@@ -340,8 +381,8 @@ class Backend(AbstractBackend):
         Since Amazon S3 does not support chunked uploads, the entire data will
         be buffered in memory before upload.
         """
-        print ("open_write key : %s" % key)
-        log.debug('open_write(%s): start', key)
+#        print ("[method]open_write key : %s" % key)
+        log.debug('[method]open_write(%s): start', key)
 
         headers = dict()
         if metadata:
@@ -374,7 +415,16 @@ class Backend(AbstractBackend):
 
     def _do_request(self, method, path, subres=None, query_string=None,
                     headers=None, body=None):
-        print("method: _do_request")
+        if method == 'GET':
+            print("[method]_do_request")
+            print("[method]_do_request:params:method(%s)" % method)
+            print("[method]_do_request:params:path(%s)" % path)
+            print("[method]_do_request:params:subres(%s)" % subres)
+            print("[method]_do_request:params:query_string(%s)" % query_string)
+            print("[method]_do_request:params:headers(%s)" % headers)
+            print("[method]_do_request:params:body(%s)" % body)
+        '''
+        '''
         '''Send request, read and return response object'''
 
         log.debug('_do_request(): start with parameters (%r, %r, %r, %r, %r, %r)',
@@ -402,7 +452,7 @@ class Backend(AbstractBackend):
             '''
 
             resp = self._send_request(method, path, headers, subres, query_string, body)
-            # print("\t[process] resp : %s" % resp)
+            # print("\t[process] resp : %s" % resp.read())
             log.debug("resp:%s" % resp.getheaders())
             log.debug('_do_request(): request-id: %s', resp.getheader('x-oss-request-id'))
 
@@ -413,8 +463,8 @@ class Backend(AbstractBackend):
 
             # Assume redirect
             new_url = resp.getheader('Location')
-            print("resp: %s" % resp)
-            print("new_url: %s" % new_url)
+            # print("resp: %s" % resp)
+            # print("new_url: %s" % new_url)
             if new_url is None:
                 break
             log.info('_do_request(): redirected to %s', new_url)
